@@ -4,7 +4,9 @@
     {
         _Color ("Color", Color) = (1,1,1,1)
         _MainTex ("Albedo (RGB)", 2D) = "white" {}
-        _Glossiness ("Smoothness", Range(0,1)) = 0.5
+		_CutoutThresh("Alpha Cutoff", Range(0.0,1.0)) = 0.2
+		
+		_Glossiness ("Smoothness", Range(0,1)) = 0.5
         _Metallic ("Metallic", Range(0,1)) = 0.0
     }
     SubShader
@@ -38,6 +40,7 @@
         half _Glossiness;
         half _Metallic;
         fixed4 _Color;
+		float _CutoutThresh;
 
         // Add instancing support for this shader. You need to check 'Enable Instancing' on materials that use the shader.
         // See https://docs.unity3d.com/Manual/GPUInstancing.html for more information about instancing.
@@ -49,13 +52,18 @@
         void surf (Input IN, inout SurfaceOutputStandard o)
         {
             // Albedo comes from a texture tinted by color
-            fixed4 c = tex2D (_MainTex, IN.uv_MainTex) * _Color;
+			fixed4 c;
+			c.rgb = _Color.rgb;
+			c.a = tex2D(_MainTex, IN.uv_MainTex).a;
             o.Albedo = c.rgb;
             // Metallic and smoothness come from slider variables
             o.Metallic = _Metallic;
             o.Smoothness = _Glossiness;
-			o.Alpha = 0;// c.a;
+			o.Alpha = c.a;
 			//UNITY_OPAQUE_ALPHA(o.Alpha);
+			
+			//col.a = _Transparency;
+			clip(o.Alpha - _CutoutThresh);
         }
         ENDCG
     }

@@ -1,15 +1,15 @@
-﻿Shader "Custom/test transparency"
+﻿Shader "Custom/basic"
 {
 	Properties
 	{
 		_MainTex("Albedo Texture", 2D) = "white" {}
 		_TintColor("Tint Color", Color) = (1,1,1,1)
-		//_Transparency("Transparency", Range(0.0,0.5)) = 0.25
-		_CutoutThresh("Cutout Threshold", Range(0.0,1.0)) = 0.2
-		//_Distance("Distance", Float) = 1
-		//_Amplitude("Amplitude", Float) = 1
-		//_Speed("Speed", Float) = 1
-		//_Amount("Amount", Range(0.0,1.0)) = 1
+			//_Transparency("Transparency", Range(0.0,0.5)) = 0.25
+			_CutoutThresh("Alpha Cutoff", Range(0.0,1.0)) = 0.2
+			//_Distance("Distance", Float) = 1
+			//_Amplitude("Amplitude", Float) = 1
+			//_Speed("Speed", Float) = 1
+			//_Amount("Amount", Range(0.0,1.0)) = 1
 	}
 
 		SubShader
@@ -62,12 +62,15 @@
 				fixed4 frag(v2f i) : SV_Target
 				{
 					// sample the texture
-					fixed4 col = tex2D(_MainTex, i.uv) + _TintColor;
-					//col.a = _Transparency;
-					clip(col.r - _CutoutThresh);
-					return col;
-				}
-				ENDCG
+					fixed4 col;
+					col.rgb = _TintColor.rgb;
+					col.a = tex2D(_MainTex, i.uv).a;
+					//if (col.a > _CutoutThresh)
+				//col.a = _Transparency;
+				//clip(col.r - _CutoutThresh);
+				return col;
 			}
+			ENDCG
+		}
 		}
 }
