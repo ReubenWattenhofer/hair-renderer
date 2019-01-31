@@ -1,2 +1,2 @@
-# hair-renderer
+# Hair Renderer
 Undergrad senior project
