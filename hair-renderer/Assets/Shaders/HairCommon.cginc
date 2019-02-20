@@ -24,8 +24,9 @@ struct v2f {
 	float2 uv : TEXCOORD1;
 	float3 tangentWorldSpace : TEXCOORD2;
 	float3 normalWorldSpace : TEXCOORD3;
+	float3 biTangentWorldSpace : TEXCOORD4;
 
-	float4 posModelSpace : TEXCOORD4;
+	float4 posModelSpace : TEXCOORD5;
 };
 
 

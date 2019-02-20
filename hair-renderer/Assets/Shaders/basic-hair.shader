@@ -59,8 +59,16 @@
 					o.pos = UnityObjectToClipPos(v.pos);
 					o.posModelSpace = v.pos;
 					o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-					o.tangentWorldSpace = normalize(UnityObjectToViewPos(v.tangent));
-					o.normalWorldSpace = normalize(UnityObjectToViewPos(v.normal));
+					// @TODO: Why do these methods (UnityObjectToViewPos vs mul(UNITY_MATRIX_MV, vector) )
+					// produce different results?
+
+					
+					o.tangentWorldSpace = normalize(mul(unity_ObjectToWorld, float4(v.tangent.xyz, 0))); //normalize(UnityObjectToViewPos(v.tangent));
+					o.normalWorldSpace = normalize(mul(unity_ObjectToWorld, float4(v.normal, 0))); //normalize(UnityObjectToViewPos(v.normal));
+					// We want to ignore the w otherwise normalization will fail horribly
+					//o.tangentWorldSpace = normalize(mul(UNITY_MATRIX_MV, float4(v.tangent.xyz, 0) ) );// UnityObjectToViewPos(v.tangent));
+					//o.normalWorldSpace = normalize(mul(UNITY_MATRIX_MV, float4(v.normal, 0) ) );//normalize(UnityObjectToViewPos(v.normal));
+					o.biTangentWorldSpace = normalize(cross(o.normalWorldSpace, o.tangentWorldSpace)) * v.tangent.w;
 
 					return o;
 				}
@@ -85,7 +93,7 @@
 					float specExp1 = 64;
 					float specExp2 = 48;
 
-					col.rgb = HairLighting(i.tangentWorldSpace, i.normalWorldSpace, -lightDirection, viewDirection,
+					col.rgb = HairLighting(i.biTangentWorldSpace, i.normalWorldSpace, -lightDirection, viewDirection,
 						i.uv, tex2D(_AmbientOcclusion, i.uv).r,
 						tex2D(_SpecularShift, i.uv).r - 0.5, _PrimaryShift, _SecondaryShift, tex2D(_MainTex, i.uv).rgb, _TintColor,
 						_Highlight1, specExp1, _Highlight2, specExp2, tex2D(_SecondarySparkle, i.uv).r, _LightColor0
