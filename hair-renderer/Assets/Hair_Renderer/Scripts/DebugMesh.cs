@@ -11,6 +11,7 @@ public class DebugMesh : MonoBehaviour
     // Show the tangents and normals in the editor for debugging
     public Vector4[] tangents;
     public Vector3[] normals;
+       
 
     // Start is called before the first frame update
     void Start()
