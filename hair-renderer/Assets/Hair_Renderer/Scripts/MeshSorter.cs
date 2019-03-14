@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public class MeshSorter : MonoBehaviour
 {
@@ -11,7 +12,61 @@ public class MeshSorter : MonoBehaviour
     private SortedDictionary<float, Mesh> sorted_meshes;
     //@TODO: figure out way to get rid of sorted_to_original (Make dictionary of float to gameobject instead?)
     // might be slower
-    private Dictionary<Mesh, Transform> sorted_to_original;
+    //private Dictionary<Mesh, Transform> sorted_to_original;
+    //// Vertices are in parent local space
+    //private Dictionary<Mesh, Vector3[]> vertices_local;
+    //private Dictionary<Mesh, uint[]> indices;
+    //// Center of mass is in world space
+    //private Dictionary<Mesh, Vector3> center_of_mass;
+
+    private Dictionary<Mesh, MeshData> meshData;
+
+    public class MeshData
+    {
+        public Transform transform_original;
+        public List<Vector3> vertices_local;
+        public int[] indices_in_combined_mesh;
+        public Vector3 center;
+
+        public MeshData(Transform transform, Vector3[] vertices, Vector3 center)
+        {
+            transform_original = transform;
+            vertices_local = vertices.ToList();
+            this.center = center;
+        }
+
+        // Finds triangle indices in parent mesh and adds them to its index list
+        // This is O(N^2).  Don't do it too often.
+        public void Find_Indices(Mesh m)
+        {
+            // Index in m.triangles, and value
+            SortedDictionary<int, int> foundIndices = new SortedDictionary<int, int>();
+            //https://stackoverflow.com/questions/1603170/conversion-of-system-array-to-list
+            List<int> triangles = m.triangles.OfType<int>().ToList();
+
+            Vector3 current = Vector3.zero;
+            for (int i = 0; i < m.vertices.Length; i++) 
+            {
+                current = m.vertices[i];
+                if (vertices_local.Contains(current))
+                {
+                    int triangles_index = triangles.IndexOf(i);
+                    foundIndices.Add(triangles_index, i);
+                }
+            }
+
+            List<int> tempIndexList = new List<int>();
+            foreach (var v in foundIndices)
+            {
+                tempIndexList.Add(v.Value);
+            }
+
+            indices_in_combined_mesh = tempIndexList.ToArray();
+            Debug.Log(indices_in_combined_mesh.Length + " indices found");
+        }
+
+    }
+
     // https://www.tutorialsteacher.com/csharp/csharp-sortedlist
     // A sorted list sorts by ascending key value, by default
 
@@ -25,7 +80,6 @@ public class MeshSorter : MonoBehaviour
     // To access the meshes more quickly on Update
     private List<Mesh> meshes;
 
-    private Dictionary<Mesh, Vector3[]> vertices_local;
 
     //https://docs.microsoft.com/en-us/dotnet/api/system.collections.icomparer.compare?redirectedfrom=MSDN&view=netframework-4.7.2#System_Collections_IComparer_Compare_System_Object_System_Object_
     public class DecendingComparer : IComparer<float>
@@ -36,6 +90,19 @@ public class MeshSorter : MonoBehaviour
         }
     }
 
+    // Gets center of mass in object space
+    public Vector3 Calculate_Center_of_Mass(Mesh m)
+    {
+        Vector3 com = Vector3.zero;
+        foreach (Vector3 v in m.vertices)
+        {
+            com += v;
+        }
+        com /= (float)m.vertices.Length;
+        return com;
+    }
+
+
     // Start is called before the first frame update
     void Start()
     {
@@ -43,12 +110,16 @@ public class MeshSorter : MonoBehaviour
 
         meshes = new List<Mesh>();
         sorted_meshes = new SortedDictionary<float, Mesh>(new DecendingComparer());
-        sorted_to_original = new Dictionary<Mesh, Transform>();
+        //sorted_to_original = new Dictionary<Mesh, Transform>();
+        //center_of_mass = new Dictionary<Mesh, Vector3>();
+        //vertices_local = new Dictionary<Mesh, Vector3[]>();
+        //indices = new Dictionary<Mesh, uint[]>();
+        meshData = new Dictionary<Mesh, MeshData>();
+
 
         m_renderer = GetComponent<MeshRenderer>();
         filter = GetComponent<MeshFilter>();
 
-        vertices_local = new Dictionary<Mesh, Vector3[]>();
 
         //https://answers.unity.com/questions/594210/get-all-children-gameobjects.html
         //Will also get the parent transform?
@@ -87,23 +158,29 @@ public class MeshSorter : MonoBehaviour
             // https://answers.unity.com/questions/398785/how-do-i-clone-a-sharedmesh.html
             //Mesh copy = Instantiate(obj.GetComponent<MeshFilter>().sharedMesh );
             Mesh mesh = obj.GetComponent<MeshFilter>().sharedMesh;
-            // Add to sorted list of meshes
-            sorted_meshes.Add(Get_Highest_Point(mesh).z, mesh);
-            sorted_to_original.Add(mesh, obj.transform);
+
+            Vector3 com_local = Calculate_Center_of_Mass(mesh);
+            Vector3 center_of_mass = obj.transform.TransformPoint(com_local);
+
+            //sorted_to_original.Add(mesh, obj.transform);
 
 
             meshes.Add(mesh);
 
             // Clone the vertices
-            vertices_local[mesh] = (Vector3[]) mesh.vertices.Clone();
-            for (int k = 0; k < vertices_local[mesh].Length; k++)
+            Vector3[] vertices_local = (Vector3[]) mesh.vertices.Clone();
+            for (int k = 0; k < vertices_local.Length; k++)
             {
                 // Convert to world space
-                vertices_local[mesh][k] = obj.transform.TransformPoint(vertices_local[mesh][k]);
+                vertices_local[k] = obj.transform.TransformPoint(vertices_local[k]);
                 // Now convert to the parent local space
-                vertices_local[mesh][k] = transform.InverseTransformPoint(vertices_local[mesh][k]);
+                vertices_local[k] = transform.InverseTransformPoint(vertices_local[k]);
             }
 
+            meshData[mesh] = new MeshData(obj.transform, vertices_local, center_of_mass);
+
+            // Add to sorted list of meshes
+            sorted_meshes.Add(Get_Highest_Point(mesh).z, mesh);
 
             //meshes.Add(copy);
 
@@ -124,8 +201,8 @@ public class MeshSorter : MonoBehaviour
         {
             combine[i].mesh = m;
             // https://forum.unity.com/threads/combined-mesh-is-positioned-far-away-from-gameobject.319421/
-            combine[i].transform = transform.worldToLocalMatrix * sorted_to_original[m].localToWorldMatrix;
-            sorted_to_original[m].gameObject.SetActive(false);
+            combine[i].transform = transform.worldToLocalMatrix * meshData[m].transform_original.localToWorldMatrix;
+            //meshData[m].transform_original.gameObject.SetActive(false);
             i++;
         }
 
@@ -141,7 +218,13 @@ public class MeshSorter : MonoBehaviour
         combined_mesh.CombineMeshes(combine);
         GetComponent<MeshFilter>().mesh = combined_mesh;
 
-
+        // Get the indices from the new mesh that belong to each (former) submesh
+        foreach (var v in meshData)
+        {
+            v.Value.Find_Indices(v.Key);
+            // Turn off the old mesh
+            v.Value.transform_original.gameObject.SetActive(false);
+        }
 
         //foreach (KeyValuePair<float, Mesh> pair in sorted_meshes)
         //{
@@ -169,6 +252,7 @@ public class MeshSorter : MonoBehaviour
             // https://answers.unity.com/questions/398785/how-do-i-clone-a-sharedmesh.html
             //Mesh mesh = obj.GetComponent<MeshFilter>().sharedMesh;
             // Add to sorted list of meshes
+            // @TODO: account for same key values with random noise
             sorted_meshes.Add(Get_Highest_Point(mesh).z, mesh);
         }
 
@@ -185,8 +269,8 @@ public class MeshSorter : MonoBehaviour
 
             // @TODO: speed up
             // https://stackoverflow.com/questions/23248872/fast-array-copy-in-c-sharp?lq=1
-            vertices_local[m].CopyTo(combined_mesh.vertices, index);
-
+            //vertices_local[m].CopyTo(combined_mesh.vertices, index);
+            //System.Array.Copy(vertices_local[m], 0, combined_mesh.vertices, index, vertices_local[m].Length);
             index += m.vertices.Length;
         }
 
@@ -205,21 +289,23 @@ public class MeshSorter : MonoBehaviour
     /// <returns> copied vertex </returns>
     private Vector3 Get_Highest_Point(Mesh m)
     {
-        Vector3 point = transform.TransformPoint(m.vertices[0]);
+        return Camera.main.WorldToViewportPoint(meshData[m].center);
 
-        //@TODO: use view direction or head directions (where top of head is pointing) to sort
-        foreach (Vector3 vert in m.vertices)
-        {
-            // Transform to world space
-            Vector3 test_point = Camera.main.WorldToViewportPoint(vert);
-            //Vector3 test_point = transform.TransformPoint(vert);
-            if (test_point.z > point.z)
-            {
-                point = test_point;
-            }
-        }
+        //Vector3 point = transform.TransformPoint(m.vertices[0]);
 
-        return point;
+        ////@TODO: use view direction or head directions (where top of head is pointing) to sort
+        //foreach (Vector3 vert in m.vertices)
+        //{
+        //    // Transform to world space
+        //    Vector3 test_point = Camera.main.WorldToViewportPoint(vert);
+        //    //Vector3 test_point = transform.TransformPoint(vert);
+        //    if (test_point.z > point.z)
+        //    {
+        //        point = test_point;
+        //    }
+        //}
+
+        //return point;
     }
 
 
