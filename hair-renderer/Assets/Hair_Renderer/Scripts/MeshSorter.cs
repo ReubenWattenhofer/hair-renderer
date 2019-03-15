@@ -281,66 +281,105 @@ private MeshRenderer m_renderer;
         //mesh.triangles = triangles.ToArray();
     }
 
+    static int count = 0;
 
     // Update is called once per frame
     void LateUpdate()
     {
-        sorted_meshes.Clear();
+        if (count++ > 1) return;
+        //sorted_meshes.Clear();
 
-        int getOut = 0;
-        foreach (Mesh mesh in meshes)
+        ////int getOut = 0;
+        //foreach (Mesh mesh in meshes)
+        //{
+        //    //if (getOut++ > 100) break;
+
+        //    // https://answers.unity.com/questions/398785/how-do-i-clone-a-sharedmesh.html
+        //    //Mesh mesh = obj.GetComponent<MeshFilter>().sharedMesh;
+        //    // Add to sorted list of meshes
+        //    // @TODO: account for same key values with random noise
+        //    bool success = false;
+        //    float noise = 0;
+        //    while (!success)
+        //    {
+        //        try
+        //        {
+        //            sorted_meshes.Add(Get_Highest_Point(mesh).z + noise, mesh);
+        //            success = true;
+        //        }
+        //        catch (System.Exception e)
+        //        {
+        //            Debug.Log(e.Message);
+        //            noise += 0.001f;
+        //        }
+        //    }
+        //}
+
+        ////CombineInstance[] combine = new CombineInstance[sorted_meshes.Count];
+        //int index = 0;
+
+        ////Debug.Log("Found " + sorted_meshes.Count + " children meshes");
+        //foreach (Mesh m in sorted_meshes.Values)
+        //{
+        //    //combined_mesh.vertices = null;
+        //    //combine[i].mesh = m;
+        //    //// https://forum.unity.com/threads/combined-mesh-is-positioned-far-away-from-gameobject.319421/
+        //    //combine[i].transform = transform.worldToLocalMatrix * sorted_to_original[m].localToWorldMatrix;
+
+        //    // @TODO: speed up
+        //    // https://stackoverflow.com/questions/23248872/fast-array-copy-in-c-sharp?lq=1
+
+        //    //vertices_local[m].CopyTo(combined_mesh.vertices, index);
+        //    //meshData[m].vertices_local.CopyTo(vertices, index);
+
+        //    meshData[m].indices_in_combined_mesh.CopyTo(indices, index);
+        //    //meshData[m].indices_in_combined_mesh.CopyTo(combined_mesh.triangles, index);
+        //    //System.Array.Copy(vertices_local[m], 0, combined_mesh.vertices, index, vertices_local[m].Length);
+        //    //System.Array.Copy(meshData[m].indices_in_combined_mesh, 0, indices, index, meshData[m].indices_in_combined_mesh.Length);
+        //    //index += m.vertices.Length;
+
+        //    index += meshData[m].indices_in_combined_mesh.Length;
+        //    //index += meshData[m].vertices_local.Count();
+        //}
+
+
+        Vector3[] t = new Vector3[3];
+        Vector3 center = Vector3.zero;
+        SortedDictionary<float, int[]> sortedTriangles = new SortedDictionary<float, int[]>();
+
+        for (int i = 0; i < combined_mesh.triangles.Length; i += 3)
         {
-            //if (getOut++ > 100) break;
+            t[0] = combined_mesh.vertices[combined_mesh.triangles[i]];
+            t[1] = combined_mesh.vertices[combined_mesh.triangles[i + 1]];
+            t[2] = combined_mesh.vertices[combined_mesh.triangles[i + 2]];
 
-            // https://answers.unity.com/questions/398785/how-do-i-clone-a-sharedmesh.html
-            //Mesh mesh = obj.GetComponent<MeshFilter>().sharedMesh;
-            // Add to sorted list of meshes
-            // @TODO: account for same key values with random noise
-            bool success = false;
-            float noise = 0;
-            while (!success)
+            center = (t[0] + t[1] + t[2]) / 3f;
+            // Cull backfacing triangles
+            float dot = Vector3.Dot(combined_mesh.normals[combined_mesh.triangles[i]], Camera.main.transform.forward);
+            if (dot < 0) continue;
+            float z_approx = Vector3.Dot(Camera.main.transform.forward, center - Camera.main.transform.position);
+
+            try
             {
-                try
-                {
-                    sorted_meshes.Add(Get_Highest_Point(mesh).z + noise, mesh);
-                    success = true;
-                }
-                catch (System.Exception e)
-                {
-                    Debug.Log(e.Message);
-                    noise += 0.001f;
-                }
+                sortedTriangles.Add(z_approx, new int[] { i, i + 1, i + 2 });
+            }
+            catch
+            {
+                //@TODO: something (noise, further sorting, etc)
             }
         }
 
-        //CombineInstance[] combine = new CombineInstance[sorted_meshes.Count];
         int index = 0;
-        
-        //Debug.Log("Found " + sorted_meshes.Count + " children meshes");
-        foreach (Mesh m in sorted_meshes.Values)
+        foreach (int[] tri in sortedTriangles.Values.ToArray())
         {
-            //combined_mesh.vertices = null;
-            //combine[i].mesh = m;
-            //// https://forum.unity.com/threads/combined-mesh-is-positioned-far-away-from-gameobject.319421/
-            //combine[i].transform = transform.worldToLocalMatrix * sorted_to_original[m].localToWorldMatrix;
-
-            // @TODO: speed up
-            // https://stackoverflow.com/questions/23248872/fast-array-copy-in-c-sharp?lq=1
-
-            //vertices_local[m].CopyTo(combined_mesh.vertices, index);
-            //meshData[m].vertices_local.CopyTo(vertices, index);
-
-            meshData[m].indices_in_combined_mesh.CopyTo(indices, index);
-            //meshData[m].indices_in_combined_mesh.CopyTo(combined_mesh.triangles, index);
-            //System.Array.Copy(vertices_local[m], 0, combined_mesh.vertices, index, vertices_local[m].Length);
-            //System.Array.Copy(meshData[m].indices_in_combined_mesh, 0, indices, index, meshData[m].indices_in_combined_mesh.Length);
-            //index += m.vertices.Length;
-
-            index += meshData[m].indices_in_combined_mesh.Length;
-            //index += meshData[m].vertices_local.Count();
+            tri.CopyTo(indices, index);
+            index += 3;
         }
 
-        combined_mesh.triangles = indices;
+        //combined_mesh.triangles = indices;
+
+
+
         //combined_mesh.vertices = vertices;
 
         //@TODO: don't throw away mesh every frame to avoid excessive garbage collection
