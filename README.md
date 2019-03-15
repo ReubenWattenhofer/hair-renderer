@@ -8,7 +8,7 @@ Dr. Hans Dulimarta, Grand Valley State University
 ## Project Description  
 Hair modeling is generally divided into three components: geometric modeling, rendering, and animating/simulating.  This project focuses on hair rendering.  Current features include Marschner lighting and hair sorting.
 
-## Using this project  
+## Using This Project  
 You will need to use an external hair model, since none are included in this project.  The Unity Asset Store might be a good place to find one.  This project is currently designed for ribbon patch hair models.  In addition to the hair model, you will need textures, hopefully provided with the model.  These include diffuse and alpha textures.  Default specular shift and secondary highlight noise textures are provided by this project (sourced from [here](http://web.engr.oregonstate.edu/~mjb/cs519/Projects/Papers/HairRendering.pdf "SIGGRAPH slides")).
 
 Download the "hair-renderer" Unity package, which includes the shader, C# scripts, and textures.  Open your current Unity project and select Assets/Import Package/Custom Package.  Select the hair-renderer package and import all.
