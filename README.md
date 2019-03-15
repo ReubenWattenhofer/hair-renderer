@@ -1,5 +1,5 @@
 # Hair Renderer
-Undergrad senior project
+Undergraduate senior project
 
 ## Mentors:
 Kalle Bladin, USC Institute for Creative Technologies  
