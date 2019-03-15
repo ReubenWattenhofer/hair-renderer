@@ -20,6 +20,8 @@ public class MeshSorter : MonoBehaviour
     //private Dictionary<Mesh, Vector3> center_of_mass;
 
     private Dictionary<Mesh, MeshData> meshData;
+    private int[] indices;
+    private Vector3[] vertices;
 
     public class MeshData
     {
@@ -48,11 +50,20 @@ public class MeshSorter : MonoBehaviour
             for (int i = 0; i < m.vertices.Length; i++) 
             {
                 current = m.vertices[i];
-                if (vertices_local.Contains(current))
+                for (int j = 0; j < vertices_local.Count; j++)
                 {
-                    int triangles_index = triangles.IndexOf(i);
-                    foundIndices.Add(triangles_index, i);
+                    if (Vector3.Distance(vertices_local[j], current) < 0.00001f)
+                    {
+                        int triangles_index = triangles.IndexOf(i);
+                        foundIndices.Add(triangles_index, i);
+                        //foundIndices.Add(j, i);
+                    }
                 }
+                //if (vertices_local.Contains(current))
+                //{
+                //    int triangles_index = triangles.IndexOf(i);
+                //    foundIndices.Add(triangles_index, i);
+                //}
             }
 
             List<int> tempIndexList = new List<int>();
@@ -62,17 +73,42 @@ public class MeshSorter : MonoBehaviour
             }
 
             indices_in_combined_mesh = tempIndexList.ToArray();
-            Debug.Log(indices_in_combined_mesh.Length + " indices found");
+            //Debug.Log(indices_in_combined_mesh.Length + " indices found");
         }
 
     }
 
-    // https://www.tutorialsteacher.com/csharp/csharp-sortedlist
-    // A sorted list sorts by ascending key value, by default
+    // Use this for debugging
+    // Any vertices shared between submeshes is a bad thing!
+    // Unless the meshes are squished so close together at some points
+    // Not much can be done about that?  besides starting from a mesh and creating submeshes during runtime
+    public float Count_Shared_Vertices()
+    {
+        float shared = 0;
 
-    //private List<Mesh> meshes;
+        foreach (MeshData d in meshData.Values)
+        {
+            foreach (int index in d.indices_in_combined_mesh)
+            {
+                foreach (MeshData d2 in meshData.Values)
+                {
+                    if (d2.Equals(d)) continue;
+                    if (d2.indices_in_combined_mesh.Contains(index))
+                        shared++;
+                }
+            }
+        }
 
-    private MeshRenderer m_renderer;
+        return shared;
+    }
+
+
+// https://www.tutorialsteacher.com/csharp/csharp-sortedlist
+// A sorted list sorts by ascending key value, by default
+
+//private List<Mesh> meshes;
+
+private MeshRenderer m_renderer;
     private MeshFilter filter;
 
     private Mesh combined_mesh;
@@ -192,6 +228,7 @@ public class MeshSorter : MonoBehaviour
             //}
         }
 
+
         // https://answers.unity.com/questions/1086814/meshes-displayed-wrongly-after-combinemeshes.html
         CombineInstance[] combine = new CombineInstance[sorted_meshes.Count];
         int i = 0;
@@ -217,6 +254,8 @@ public class MeshSorter : MonoBehaviour
         combined_mesh = new Mesh();
         combined_mesh.CombineMeshes(combine);
         GetComponent<MeshFilter>().mesh = combined_mesh;
+        indices = new int[combined_mesh.triangles.Length];
+        vertices = new Vector3[combined_mesh.vertices.Length];
 
         // Get the indices from the new mesh that belong to each (former) submesh
         foreach (var v in meshData)
@@ -225,6 +264,8 @@ public class MeshSorter : MonoBehaviour
             // Turn off the old mesh
             v.Value.transform_original.gameObject.SetActive(false);
         }
+
+        //Debug.Log(Count_Shared_Vertices() + " vertices shared between submeshes found");
 
         //foreach (KeyValuePair<float, Mesh> pair in sorted_meshes)
         //{
@@ -242,23 +283,39 @@ public class MeshSorter : MonoBehaviour
 
 
     // Update is called once per frame
-    void Update()
+    void LateUpdate()
     {
         sorted_meshes.Clear();
 
-
+        int getOut = 0;
         foreach (Mesh mesh in meshes)
         {
+            //if (getOut++ > 100) break;
+
             // https://answers.unity.com/questions/398785/how-do-i-clone-a-sharedmesh.html
             //Mesh mesh = obj.GetComponent<MeshFilter>().sharedMesh;
             // Add to sorted list of meshes
             // @TODO: account for same key values with random noise
-            sorted_meshes.Add(Get_Highest_Point(mesh).z, mesh);
+            bool success = false;
+            float noise = 0;
+            while (!success)
+            {
+                try
+                {
+                    sorted_meshes.Add(Get_Highest_Point(mesh).z + noise, mesh);
+                    success = true;
+                }
+                catch (System.Exception e)
+                {
+                    Debug.Log(e.Message);
+                    noise += 0.001f;
+                }
+            }
         }
 
         //CombineInstance[] combine = new CombineInstance[sorted_meshes.Count];
         int index = 0;
-
+        
         //Debug.Log("Found " + sorted_meshes.Count + " children meshes");
         foreach (Mesh m in sorted_meshes.Values)
         {
@@ -269,10 +326,22 @@ public class MeshSorter : MonoBehaviour
 
             // @TODO: speed up
             // https://stackoverflow.com/questions/23248872/fast-array-copy-in-c-sharp?lq=1
+
             //vertices_local[m].CopyTo(combined_mesh.vertices, index);
+            //meshData[m].vertices_local.CopyTo(vertices, index);
+
+            meshData[m].indices_in_combined_mesh.CopyTo(indices, index);
+            //meshData[m].indices_in_combined_mesh.CopyTo(combined_mesh.triangles, index);
             //System.Array.Copy(vertices_local[m], 0, combined_mesh.vertices, index, vertices_local[m].Length);
-            index += m.vertices.Length;
+            //System.Array.Copy(meshData[m].indices_in_combined_mesh, 0, indices, index, meshData[m].indices_in_combined_mesh.Length);
+            //index += m.vertices.Length;
+
+            index += meshData[m].indices_in_combined_mesh.Length;
+            //index += meshData[m].vertices_local.Count();
         }
+
+        combined_mesh.triangles = indices;
+        //combined_mesh.vertices = vertices;
 
         //@TODO: don't throw away mesh every frame to avoid excessive garbage collection
         //combined_mesh = new Mesh();
