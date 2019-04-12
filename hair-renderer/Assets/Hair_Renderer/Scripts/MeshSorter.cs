@@ -2,14 +2,22 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using UnityEngine.Rendering;
 
+[ExecuteInEditMode]
 public class MeshSorter : MonoBehaviour
 {
+    public Camera depthCam;
+    public Material depthPassCulled;
+    public Material depthPassNoCull;
+    public Material opacityPass;
+
     //private GameObject[] hairRibbons;
     private List<GameObject> hair_ribbons;
 
     // Holds copies of hair_ribbons meshes
-    private SortedDictionary<float, Mesh> sorted_meshes;
+    //private SortedDictionary<float, Mesh> sorted_meshes;
+    private SortedDictionary<float, MeshData> sorted_meshes;
     //@TODO: figure out way to get rid of sorted_to_original (Make dictionary of float to gameobject instead?)
     // might be slower
     //private Dictionary<Mesh, Transform> sorted_to_original;
@@ -20,8 +28,15 @@ public class MeshSorter : MonoBehaviour
     //private Dictionary<Mesh, Vector3> center_of_mass;
 
     private Dictionary<Mesh, MeshData> meshData;
+
+    private Dictionary<Mesh, Transform> mesh_to_transform;
+
     private int[] indices;
     private Vector3[] vertices;
+
+    MeshData[] sortablePatches;
+
+    //public Material material;
 
     public class MeshData
     {
@@ -37,19 +52,37 @@ public class MeshSorter : MonoBehaviour
             this.center = center;
         }
 
+        public MeshData(Transform transform, int[] indices, Vector3 center)
+        {
+            transform_original = transform;
+            //vertices_local = vertices.ToList();
+            indices_in_combined_mesh = indices;
+            this.center = center;
+        }
+
         // Finds triangle indices in parent mesh and adds them to its index list
         // This is O(N^2).  Don't do it too often.
-        public void Find_Indices(Mesh m)
+        public void Find_Indices(Mesh m, Transform transform)
         {
             // Index in m.triangles, and value
             SortedDictionary<int, int> foundIndices = new SortedDictionary<int, int>();
             //https://stackoverflow.com/questions/1603170/conversion-of-system-array-to-list
             List<int> triangles = m.triangles.OfType<int>().ToList();
 
+            List<Vector3> vertices_world = new List<Vector3>();
+            Vector3 vert = Vector3.zero;
+
+            foreach (Vector3 vertex in m.vertices)
+            {
+                vert = transform.TransformPoint(vertex);
+                vertices_world.Add(vert);
+            }
+
             Vector3 current = Vector3.zero;
             for (int i = 0; i < m.vertices.Length; i++) 
             {
-                current = m.vertices[i];
+                //current = m.vertices[i];
+                current = vertices_world[i];
                 for (int j = 0; j < vertices_local.Count; j++)
                 {
                     if (Vector3.Distance(vertices_local[j], current) < 0.00001f)
@@ -73,10 +106,90 @@ public class MeshSorter : MonoBehaviour
             }
 
             indices_in_combined_mesh = tempIndexList.ToArray();
-            //Debug.Log(indices_in_combined_mesh.Length + " indices found");
+            Debug.Log(indices_in_combined_mesh.Length + " indices found");
         }
 
     }
+
+
+    class Triangle
+    {
+        public int i0, i1, i2;
+
+        public Triangle(int i0, int i1, int i2)
+        {
+            this.i0 = i0;
+            this.i1 = i1;
+            this.i2 = i2;
+        }
+    }
+
+    class Patch
+    {
+        public Mesh owner;
+        public HashSet<int> indices;
+        public HashSet<Triangle> triangles;
+
+        public Patch(Mesh owner, Triangle t)
+        {
+            this.owner = owner;
+            indices = new HashSet<int>();
+            triangles = new HashSet<Triangle>();
+
+            if (t != null)
+                AddTriangle(t);
+        }
+
+        public bool AddTriangle(Triangle t)
+        {
+            if (triangles.Contains(t))
+                return false;
+
+            triangles.Add(t);
+            indices.Add(t.i0);
+            indices.Add(t.i1);
+            indices.Add(t.i2);
+            return true;
+        }
+
+        public bool Merge(Patch p)
+        {
+            int commonCount = 0;
+            foreach (var pi in p.indices)
+            {
+                if (indices.Contains(pi))
+                {
+                    if (++commonCount >= 1)
+                        goto outside;
+                }
+                //else
+                //{
+                //    // This is dog slow, but good enough for now (and can also be baked if we're too lazy to opt it).
+                //    const float threshold = 0.001f * 0.001f;
+                //    var piv = owner.vertices[pi];
+                //    foreach (var si in indices)
+                //    {
+                //        var siv = owner.vertices[si];
+                //        if (Vector3.SqrMagnitude(piv - siv) <= threshold)
+                //            if (++commonCount >= 1)
+                //                goto outside;
+                //    }
+                //}
+            }
+        outside:
+
+            if (commonCount >= 1)
+            {
+                foreach (var t in p.triangles)
+                    AddTriangle(t);
+
+                return true;
+            }
+
+            return false;
+        }
+    }
+
 
     // Use this for debugging
     // Any vertices shared between submeshes is a bad thing!
@@ -138,14 +251,27 @@ private MeshRenderer m_renderer;
         return com;
     }
 
+    public Vector3 Calculate_Center_of_Mass(Vector3[] vertices)
+    {
+        Vector3 com = Vector3.zero;
+        foreach (Vector3 v in vertices)
+        {
+            com += v;
+        }
+        com /= (float)vertices.Length;
+        return com;
+    }
+
 
     // Start is called before the first frame update
     void Start()
     {
         hair_ribbons = new List<GameObject>();
+        mesh_to_transform = new Dictionary<Mesh, Transform>();
 
         meshes = new List<Mesh>();
-        sorted_meshes = new SortedDictionary<float, Mesh>(new DecendingComparer());
+        //sorted_meshes = new SortedDictionary<float, Mesh>(new DecendingComparer());
+        sorted_meshes = new SortedDictionary<float, MeshData>(new DecendingComparer());
         //sorted_to_original = new Dictionary<Mesh, Transform>();
         //center_of_mass = new Dictionary<Mesh, Vector3>();
         //vertices_local = new Dictionary<Mesh, Vector3[]>();
@@ -179,12 +305,11 @@ private MeshRenderer m_renderer;
         // https://docs.unity3d.com/Manual/OptimizingGraphicsPerformance.html
         if (hair_ribbons.Count > 0)
         {
-            m_renderer.material = hair_ribbons[0].GetComponent<MeshRenderer>().material;
+            //m_renderer.material = material;// hair_ribbons[0].GetComponent<MeshRenderer>().material;
         } else
         {
             Debug.LogError("No children found");
         }
-
 
         // We could also do this in the above loop
         foreach (GameObject obj in hair_ribbons)
@@ -200,183 +325,268 @@ private MeshRenderer m_renderer;
 
             //sorted_to_original.Add(mesh, obj.transform);
 
+            mesh_to_transform[mesh] = obj.transform;
 
             meshes.Add(mesh);
 
             // Clone the vertices
-            Vector3[] vertices_local = (Vector3[]) mesh.vertices.Clone();
-            for (int k = 0; k < vertices_local.Length; k++)
-            {
-                // Convert to world space
-                vertices_local[k] = obj.transform.TransformPoint(vertices_local[k]);
-                // Now convert to the parent local space
-                vertices_local[k] = transform.InverseTransformPoint(vertices_local[k]);
-            }
-
-            meshData[mesh] = new MeshData(obj.transform, vertices_local, center_of_mass);
-
-            // Add to sorted list of meshes
-            sorted_meshes.Add(Get_Highest_Point(mesh).z, mesh);
-
-            //meshes.Add(copy);
-
-            // Test to make sure that we actually created a copy
-            //for (int i = 0; i < copy.vertices.Length; i++)
+            //Vector3[] vertices_local = (Vector3[]) mesh.vertices.Clone();
+            //for (int k = 0; k < vertices_local.Length; k++)
             //{
-            //    Vector3 vertex = copy.vertices[i];
-            //    vertex += new Vector3(10, 0, 0);
+            //    // Convert to world space
+            //    vertices_local[k] = obj.transform.TransformPoint(vertices_local[k]);
+            //    // Now convert to the parent local space
+            //    //vertices_local[k] = transform.InverseTransformPoint(vertices_local[k]);
             //}
+
+            //meshData[mesh] = new MeshData(obj.transform, vertices_local, center_of_mass);
+
+            //// Add to sorted list of meshes
+            ////sorted_meshes.Add(Get_Highest_Point(mesh).z, mesh);
+
+            ////meshes.Add(copy);
+
+            //// Test to make sure that we actually created a copy
+            ////for (int i = 0; i < copy.vertices.Length; i++)
+            ////{
+            ////    Vector3 vertex = copy.vertices[i];
+            ////    vertex += new Vector3(10, 0, 0);
+            ////}
         }
 
 
         // https://answers.unity.com/questions/1086814/meshes-displayed-wrongly-after-combinemeshes.html
-        CombineInstance[] combine = new CombineInstance[sorted_meshes.Count];
-        int i = 0;
+        //CombineInstance[] combine = new CombineInstance[sorted_meshes.Count];
+        CombineInstance[] combine = new CombineInstance[meshes.Count];
+        int u = 0;
 
-        Debug.Log("Found " + sorted_meshes.Count + " children meshes");
-        foreach(var m in sorted_meshes.Values)
+        //Debug.Log("Found " + sorted_meshes.Count + " children meshes");
+        Debug.Log("Found " + meshes.Count + " children meshes");
+        foreach (var m in meshes) // sorted_meshes.Values)
         {
-            combine[i].mesh = m;
+            combine[u].mesh = m;
             // https://forum.unity.com/threads/combined-mesh-is-positioned-far-away-from-gameobject.319421/
-            combine[i].transform = transform.worldToLocalMatrix * meshData[m].transform_original.localToWorldMatrix;
-            //meshData[m].transform_original.gameObject.SetActive(false);
-            i++;
+            //combine[u].transform = transform.worldToLocalMatrix * meshData[m].transform_original.localToWorldMatrix;
+            combine[u].transform = transform.worldToLocalMatrix * mesh_to_transform[m].localToWorldMatrix;
+
+            ////meshData[m].transform_original.gameObject.SetActive(false);
+            //m.gameObject.SetActive(false);
+            u++;
         }
 
-        // Copy all of the individual mesh data into one very big composite mesh
-        //List<Vector3> vertices = new List<Vector3>();
-        //List<Vector3> normals = new List<Vector3>();
-        //List<Vector3> tangents = new List<Vector3>();
-        //List<int> triangles = new List<int>();
 
-        //Mesh mesh = new Mesh();
-        //@TODO: use shared_mesh instead?
-        combined_mesh = new Mesh();
+        foreach (GameObject obj in hair_ribbons)
+        {
+            obj.SetActive(false);
+        }
+
+            //// Copy all of the individual mesh data into one very big composite mesh
+            ////List<Vector3> vertices = new List<Vector3>();
+            ////List<Vector3> normals = new List<Vector3>();
+            ////List<Vector3> tangents = new List<Vector3>();
+            ////List<int> triangles = new List<int>();
+
+            ////Mesh mesh = new Mesh();
+            //@TODO: use shared_mesh instead?
+            combined_mesh = new Mesh();
         combined_mesh.CombineMeshes(combine);
+        //GetComponent<MeshFilter>().mesh = meshes[0];// combined_mesh;
         GetComponent<MeshFilter>().mesh = combined_mesh;
         indices = new int[combined_mesh.triangles.Length];
         vertices = new Vector3[combined_mesh.vertices.Length];
 
         // Get the indices from the new mesh that belong to each (former) submesh
-        foreach (var v in meshData)
-        {
-            v.Value.Find_Indices(v.Key);
-            // Turn off the old mesh
-            v.Value.transform_original.gameObject.SetActive(false);
-        }
-
-        //Debug.Log(Count_Shared_Vertices() + " vertices shared between submeshes found");
-
-        //foreach (KeyValuePair<float, Mesh> pair in sorted_meshes)
+        //foreach (var v in meshData)
         //{
-        //    // We don't care about the key
-        //    Mesh m = pair.Value;
-
-        //    //vertices.AddRange(m.vertices);
-        //    // @TODO: finish or implement order-independent transparency
+        //    v.Value.Find_Indices(v.Key, transform);
+        //    // Turn off the old mesh
+        //    v.Value.transform_original.gameObject.SetActive(false);
         //}
 
+        ////Debug.Log(Count_Shared_Vertices() + " vertices shared between submeshes found");
 
-        //mesh.vertices = vertices.ToArray();
-        //mesh.triangles = triangles.ToArray();
+        ////foreach (KeyValuePair<float, Mesh> pair in sorted_meshes)
+        ////{
+        ////    // We don't care about the key
+        ////    Mesh m = pair.Value;
+
+        ////    //vertices.AddRange(m.vertices);
+        ////    // @TODO: finish or implement order-independent transparency
+        ////}
+
+
+        ////mesh.vertices = vertices.ToArray();
+        ////mesh.triangles = triangles.ToArray();
+
+        // From Blacksmith shader
+        var patches = new List<Patch>();
+        Debug.Log("num indices " + indices.Length);
+        patches.Add(new Patch(combined_mesh, new Triangle(indices[0], indices[1], indices[2])));
+        Patch activePatch = patches[0];
+        for (int k = 3, n = indices.Length; k < n; k += 3)
+        {
+            var newPatch = new Patch(combined_mesh, new Triangle(indices[k], indices[k + 1], indices[k + 2]));
+            if (!activePatch.Merge(newPatch))
+            {
+                patches.Add(newPatch);
+                activePatch = newPatch;
+            }
+        }
+
+        Debug.Log(patches.Count);
+
+        sortablePatches = new MeshData[patches.Count];
+        for (int i = 0, n = patches.Count; i < n; ++i) {
+			var p = patches[i];
+				
+			var c = Vector3.zero;
+			//var l = float.MaxValue;
+			foreach(var idx in p.indices) {
+				var v = vertices[idx];
+				c += v;
+				#if _DISABLED
+				foreach(var s in spheres) {
+					l = Mathf.Min(l, Vector3.Distance(space.TransformPoint(v), s.position) - s.localScale.x);
+				}
+				#else
+				//l = Mathf.Min(l, space.TransformPoint(v).y - space.position.y);
+				#endif
+			}
+			c /= (float)p.indices.Count;
+				
+			var patchIndices = new int[p.triangles.Count * 3];
+			var pIdx = 0;
+			foreach(var t in p.triangles) {
+				patchIndices[pIdx++] = t.i0;
+				patchIndices[pIdx++] = t.i1;
+				patchIndices[pIdx++] = t.i2;
+			}
+
+            //Debug.Log(string.Format("Patch {0}:  Layer: {1}  Centroid: {2}", patchIdx, l, c));
+            //sortablePatches[i] = new MeshData(patchIndices, c, l);
+            //meshData[mesh] = new MeshData(obj.transform, vertices_local, center_of_mass);
+            //meshData[mesh] = new MeshData(transform, patchIndices, null, Calculate_Center_of_Mass);
+            Vector3[] blah = new Vector3[1];
+            sortablePatches[i] = new MeshData(transform, patchIndices, c);
+            Debug.Log(c);
+        }
+
+
     }
+
+
+
+
+ 
+
 
     static int count = 0;
 
     // Update is called once per frame
     void LateUpdate()
     {
-        if (count++ > 1) return;
-        //sorted_meshes.Clear();
+        return;
+        //if (count++ > 1) return;
+        sorted_meshes.Clear();
 
-        ////int getOut = 0;
+        //int getOut = 0;
         //foreach (Mesh mesh in meshes)
-        //{
-        //    //if (getOut++ > 100) break;
+        foreach (var v in sortablePatches)
+        {
+            //if (getOut++ > 100) break;
 
-        //    // https://answers.unity.com/questions/398785/how-do-i-clone-a-sharedmesh.html
-        //    //Mesh mesh = obj.GetComponent<MeshFilter>().sharedMesh;
-        //    // Add to sorted list of meshes
-        //    // @TODO: account for same key values with random noise
-        //    bool success = false;
-        //    float noise = 0;
-        //    while (!success)
+            // https://answers.unity.com/questions/398785/how-do-i-clone-a-sharedmesh.html
+            //Mesh mesh = obj.GetComponent<MeshFilter>().sharedMesh;
+            // Add to sorted list of meshes
+            // @TODO: account for same key values with random noise
+            bool success = false;
+            float noise = 0;
+            //while (!success)
+            {
+                try
+                {
+                    //sorted_meshes.Add(Get_Highest_Point(mesh).z + noise, mesh);
+                    sorted_meshes.Add(v.center.z + noise, v);
+                    success = true;
+                }
+                catch (System.Exception e)
+                {
+                    Debug.Log(e.Message);
+                    noise += 0.001f;
+                }
+            }
+        }
+
+        //CombineInstance[] combine = new CombineInstance[sorted_meshes.Count];
+        int index = 0;
+
+        //Debug.Log("Found " + sorted_meshes.Count + " children meshes");
+        foreach (MeshData m in sorted_meshes.Values)
+        {
+            //combined_mesh.vertices = null;
+            //combine[i].mesh = m;
+            //// https://forum.unity.com/threads/combined-mesh-is-positioned-far-away-from-gameobject.319421/
+            //combine[i].transform = transform.worldToLocalMatrix * sorted_to_original[m].localToWorldMatrix;
+
+            // @TODO: speed up
+            // https://stackoverflow.com/questions/23248872/fast-array-copy-in-c-sharp?lq=1
+
+            //vertices_local[m].CopyTo(combined_mesh.vertices, index);
+            //meshData[m].vertices_local.CopyTo(vertices, index);
+
+            //meshData[m].indices_in_combined_mesh.CopyTo(indices, index);
+            m.indices_in_combined_mesh.CopyTo(indices, index);
+            //meshData[m].indices_in_combined_mesh.CopyTo(combined_mesh.triangles, index);
+            //System.Array.Copy(vertices_local[m], 0, combined_mesh.vertices, index, vertices_local[m].Length);
+            //System.Array.Copy(meshData[m].indices_in_combined_mesh, 0, indices, index, meshData[m].indices_in_combined_mesh.Length);
+            //index += m.vertices.Length;
+
+            //Debug.Log(m.indices_in_combined_mesh.Length);
+
+            index += m.indices_in_combined_mesh.Length;
+            //index += meshData[m].indices_in_combined_mesh.Length;
+
+            //index += meshData[m].vertices_local.Count();
+        }
+
+
+        //Vector3[] t = new Vector3[3];
+        //Vector3 center = Vector3.zero;
+        //SortedDictionary<float, int[]> sortedTriangles = new SortedDictionary<float, int[]>();
+
+        //for (int i = 0; i < combined_mesh.triangles.Length; i += 3)
+        //{
+        //    t[0] = combined_mesh.vertices[combined_mesh.triangles[i]];
+        //    t[1] = combined_mesh.vertices[combined_mesh.triangles[i + 1]];
+        //    t[2] = combined_mesh.vertices[combined_mesh.triangles[i + 2]];
+
+        //    center = (t[0] + t[1] + t[2]) / 3f;
+        //    // Cull backfacing triangles
+        //    float dot = Vector3.Dot(combined_mesh.normals[combined_mesh.triangles[i]], Camera.main.transform.forward);
+        //    if (dot < 0) continue;
+        //    float z_approx = Vector3.Dot(Camera.main.transform.forward, center - Camera.main.transform.position);
+
+        //    try
         //    {
-        //        try
-        //        {
-        //            sorted_meshes.Add(Get_Highest_Point(mesh).z + noise, mesh);
-        //            success = true;
-        //        }
-        //        catch (System.Exception e)
-        //        {
-        //            Debug.Log(e.Message);
-        //            noise += 0.001f;
-        //        }
+        //        sortedTriangles.Add(z_approx, new int[] { i, i + 1, i + 2 });
+        //    }
+        //    catch
+        //    {
+        //        //@TODO: something (noise, further sorting, etc)
         //    }
         //}
 
-        ////CombineInstance[] combine = new CombineInstance[sorted_meshes.Count];
         //int index = 0;
-
-        ////Debug.Log("Found " + sorted_meshes.Count + " children meshes");
-        //foreach (Mesh m in sorted_meshes.Values)
+        //foreach (int[] tri in sortedTriangles.Values.ToArray())
         //{
-        //    //combined_mesh.vertices = null;
-        //    //combine[i].mesh = m;
-        //    //// https://forum.unity.com/threads/combined-mesh-is-positioned-far-away-from-gameobject.319421/
-        //    //combine[i].transform = transform.worldToLocalMatrix * sorted_to_original[m].localToWorldMatrix;
-
-        //    // @TODO: speed up
-        //    // https://stackoverflow.com/questions/23248872/fast-array-copy-in-c-sharp?lq=1
-
-        //    //vertices_local[m].CopyTo(combined_mesh.vertices, index);
-        //    //meshData[m].vertices_local.CopyTo(vertices, index);
-
-        //    meshData[m].indices_in_combined_mesh.CopyTo(indices, index);
-        //    //meshData[m].indices_in_combined_mesh.CopyTo(combined_mesh.triangles, index);
-        //    //System.Array.Copy(vertices_local[m], 0, combined_mesh.vertices, index, vertices_local[m].Length);
-        //    //System.Array.Copy(meshData[m].indices_in_combined_mesh, 0, indices, index, meshData[m].indices_in_combined_mesh.Length);
-        //    //index += m.vertices.Length;
-
-        //    index += meshData[m].indices_in_combined_mesh.Length;
-        //    //index += meshData[m].vertices_local.Count();
+        //    tri.CopyTo(indices, index);
+        //    index += 3;
         //}
 
 
-        Vector3[] t = new Vector3[3];
-        Vector3 center = Vector3.zero;
-        SortedDictionary<float, int[]> sortedTriangles = new SortedDictionary<float, int[]>();
 
-        for (int i = 0; i < combined_mesh.triangles.Length; i += 3)
-        {
-            t[0] = combined_mesh.vertices[combined_mesh.triangles[i]];
-            t[1] = combined_mesh.vertices[combined_mesh.triangles[i + 1]];
-            t[2] = combined_mesh.vertices[combined_mesh.triangles[i + 2]];
-
-            center = (t[0] + t[1] + t[2]) / 3f;
-            // Cull backfacing triangles
-            float dot = Vector3.Dot(combined_mesh.normals[combined_mesh.triangles[i]], Camera.main.transform.forward);
-            if (dot < 0) continue;
-            float z_approx = Vector3.Dot(Camera.main.transform.forward, center - Camera.main.transform.position);
-
-            try
-            {
-                sortedTriangles.Add(z_approx, new int[] { i, i + 1, i + 2 });
-            }
-            catch
-            {
-                //@TODO: something (noise, further sorting, etc)
-            }
-        }
-
-        int index = 0;
-        foreach (int[] tri in sortedTriangles.Values.ToArray())
-        {
-            tri.CopyTo(indices, index);
-            index += 3;
-        }
-
-        //combined_mesh.triangles = indices;
+        //indices = combined_mesh.triangles;
+        combined_mesh.triangles = indices;
 
 
 
@@ -388,6 +598,15 @@ private MeshRenderer m_renderer;
         //combined_mesh.CombineMeshes(combine);
         //GetComponent<MeshFilter>().mesh = combined_mesh;
     }
+
+
+    void Show_Data(Vector3[] vertices) {
+
+        //Mesh mesh = new Mesh();
+        //mesh.vertices = vertices;
+
+    }
+
 
 
     /// <summary>
@@ -416,5 +635,81 @@ private MeshRenderer m_renderer;
         //return point;
     }
 
+    private CommandBuffer deep_opacity_buffer;
+
+    public RenderTexture m_ShadowmapCopy;
+
+    // From Unity's command buffer example code
+    // Remove command buffers from the main camera -- see Unity example code for more thorough cleanup
+    private void Cleanup()
+    {
+        depthCam.RemoveCommandBuffer(CameraEvent.AfterDepthTexture, deep_opacity_buffer);
+    }
+
+
+    // Code adapted from Unity command buffer example code and
+    // https://lindenreid.wordpress.com/2018/09/13/using-command-buffers-in-unity-selective-bloom/
+    public void OnWillRenderObject()
+    {
+        var act = gameObject.activeInHierarchy && enabled;
+        if (!act)
+        {
+            Cleanup();
+            return;
+        }
+
+        if (deep_opacity_buffer != null)
+        {
+            return;
+        }
+        
+        // create new command buffer
+        deep_opacity_buffer = new CommandBuffer();
+        deep_opacity_buffer.name = "deep opacity buffer";
+       
+        // create render texture
+        //int tempID = Shader.PropertyToID("_Temp1");
+        m_ShadowmapCopy = new RenderTexture(Screen.width, Screen.height, 0);
+
+        //deep_opacity_buffer.GetTemporaryRT(tempID, -1, -1, 0, FilterMode.Bilinear);
+
+        // add command to draw stuff to this texture
+        deep_opacity_buffer.SetRenderTarget(new RenderTargetIdentifier(m_ShadowmapCopy));
+
+        // clear render texture before drawing to it each frame!!
+        deep_opacity_buffer.ClearRenderTarget(true, true, Color.white);
+        // Draw depth pass
+        deep_opacity_buffer.DrawRenderer(GetComponent<Renderer>(), depthPassCulled);
+
+        deep_opacity_buffer.SetGlobalTexture("_DepthCulled", new RenderTargetIdentifier(m_ShadowmapCopy));
+
+
+        int tempID2 = Shader.PropertyToID("_Temp2");
+        deep_opacity_buffer.GetTemporaryRT(tempID2, -1, -1, 0, FilterMode.Bilinear);
+        // add command to draw stuff to this texture
+        deep_opacity_buffer.SetRenderTarget(tempID2);
+
+        //deep_opacity_buffer.DrawRenderer(GetComponent<Renderer>(), depthPassNoCull);
+
+        //@TODO: change back to tempID2
+        deep_opacity_buffer.SetGlobalTexture("_DeepOpacityMap", new RenderTargetIdentifier(m_ShadowmapCopy));
+
+        // Draw opacity pass
+        //deep_opacity_buffer.DrawRenderer(GetComponent<Renderer>(), opacityPass);
+
+
+        depthCam.AddCommandBuffer(CameraEvent.AfterDepthTexture, deep_opacity_buffer);
+    }
+    
+
+
+    //void OnRenderImage(RenderTexture source, RenderTexture destination)
+    //{
+    //    //depthCam.rect = new Rect(0, 0, 1, 1);
+    //    Graphics.Blit(m_ShadowmapCopy, destination);
+    //    //Graphics.Blit(source, destination, mat);
+    //    //mat is the material which contains the shader
+    //    //we are passing the destination RenderTexture to
+    //}
 
 }

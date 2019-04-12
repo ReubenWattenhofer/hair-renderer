@@ -27,6 +27,9 @@ struct v2f {
 	float3 biTangentWorldSpace : TEXCOORD4;
 
 	float4 posModelSpace : TEXCOORD5;
+	float4 deepOpacity : TEXCOORD6;
+
+	float4 scrPos : TEXCOORD7;
 };
 
 
@@ -53,7 +56,7 @@ float StrandSpecular(float3 T, float3 V, float3 L, float exponent)
 
 float4 HairLighting(float3 tangent, float3 normal, float3 lightVec, float3 viewVec, float2 uv, float ambOcc,
 	float specShift, float primaryShift, float secondaryShift, float3 diffuseAlbedo, float3 tint, float3 specularColor1,
-	float specExp1, float3 specularColor2, float specExp2, float secondarySparkle, float3 lightColor)
+	float specExp1, float3 specularColor2, float specExp2, float secondarySparkle, float3 lightColor, float3 ambientColor)
 {
 	tangent *= -1;
 	// shift tangents
@@ -61,7 +64,7 @@ float4 HairLighting(float3 tangent, float3 normal, float3 lightVec, float3 viewV
 	float3 t1 = ShiftTangent(tangent, normal, primaryShift + shiftTex);
 	float3 t2 = ShiftTangent(tangent, normal, secondaryShift + shiftTex);
 	// diffuse lighting: the lerp shifts the shadow boundary for a softer look
-	float3 diffuse = saturate(lerp(0.25, 1.0, dot(normal, lightVec)));
+	float3 diffuse = saturate(lerp(0.25, 1.0, dot(normal, lightVec) + ambientColor));
 	diffuse *= diffuseAlbedo;
 	
 	// specular lighting
