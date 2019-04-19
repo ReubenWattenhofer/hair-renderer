@@ -638,6 +638,7 @@ private MeshRenderer m_renderer;
     private CommandBuffer deep_opacity_buffer;
 
     public RenderTexture m_ShadowmapCopy;
+    public RenderTexture m_DeepOpacityMap;
 
     // From Unity's command buffer example code
     // Remove command buffers from the main camera -- see Unity example code for more thorough cleanup
@@ -677,22 +678,26 @@ private MeshRenderer m_renderer;
         deep_opacity_buffer.SetRenderTarget(new RenderTargetIdentifier(m_ShadowmapCopy));
 
         // clear render texture before drawing to it each frame!!
-        deep_opacity_buffer.ClearRenderTarget(true, true, Color.white);
+        deep_opacity_buffer.ClearRenderTarget(true, true, Color.black);
         // Draw depth pass
         deep_opacity_buffer.DrawRenderer(GetComponent<Renderer>(), depthPassCulled);
 
         deep_opacity_buffer.SetGlobalTexture("_DepthCulled", new RenderTargetIdentifier(m_ShadowmapCopy));
 
 
-        int tempID2 = Shader.PropertyToID("_Temp2");
-        deep_opacity_buffer.GetTemporaryRT(tempID2, -1, -1, 0, FilterMode.Bilinear);
-        // add command to draw stuff to this texture
-        deep_opacity_buffer.SetRenderTarget(tempID2);
+        //int tempID2 = Shader.PropertyToID("_Temp2");
+        //deep_opacity_buffer.GetTemporaryRT(tempID2, -1, -1, 0, FilterMode.Bilinear);
+        m_DeepOpacityMap = new RenderTexture(Screen.width, Screen.height, 0);
+        //add command to draw stuff to this texture
+        //deep_opacity_buffer.SetRenderTarget(new RenderTargetIdentifier(m_DeepOpacityMap));
+        //deep_opacity_buffer.ClearRenderTarget(true, true, Color.white);
 
+        deep_opacity_buffer.Blit(new RenderTargetIdentifier(m_ShadowmapCopy), new RenderTargetIdentifier(m_DeepOpacityMap));
         //deep_opacity_buffer.DrawRenderer(GetComponent<Renderer>(), depthPassNoCull);
+        deep_opacity_buffer.DrawRenderer(GetComponent<Renderer>(), opacityPass);
 
         //@TODO: change back to tempID2
-        deep_opacity_buffer.SetGlobalTexture("_DeepOpacityMap", new RenderTargetIdentifier(m_ShadowmapCopy));
+        deep_opacity_buffer.SetGlobalTexture("_DeepOpacityMap", new RenderTargetIdentifier(m_DeepOpacityMap));
 
         // Draw opacity pass
         //deep_opacity_buffer.DrawRenderer(GetComponent<Renderer>(), opacityPass);

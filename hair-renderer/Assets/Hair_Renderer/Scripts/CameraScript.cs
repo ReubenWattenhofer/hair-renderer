@@ -7,8 +7,9 @@ using UnityEngine.Rendering;
 [ExecuteInEditMode]
 public class CameraScript : MonoBehaviour
 {
-    public Material mat;
+    //public Material mat;
     private RenderTexture m_ShadowmapCopy;
+    //public RenderTexture rt;
 
     // Use ctrl-shift-f to place camera in current editor view
     void Start()
@@ -16,13 +17,14 @@ public class CameraScript : MonoBehaviour
         GetComponent<Camera>().depthTextureMode = DepthTextureMode.Depth;
         //Camera.main.depthTextureMode = DepthTextureMode.Depth;
 
+        //rt = GetComponent<Camera>().targetTexture;
 
     }
 
     // Update is called once per frame
     void Update()
     {
-        m_ShadowmapCopy = FindObjectOfType<MeshSorter>().m_ShadowmapCopy;
+        m_ShadowmapCopy = FindObjectOfType<MeshSorter>().m_DeepOpacityMap;
     }
 
     //////// http://williamchyr.com/2013/11/unity-shaders-depth-and-normal-textures/

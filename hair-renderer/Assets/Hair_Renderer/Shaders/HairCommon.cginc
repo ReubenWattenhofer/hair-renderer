@@ -2,36 +2,19 @@
 #include "Lighting.cginc" 
 #include "AutoLight.cginc"
 
-/**
-  Input to vertex shader.
-*/
-struct vertexInput {
-	float4 pos : POSITION;
-	float2 uv : TEXCOORD0;
 
-	// Normal and tangent are in object space (which makes sense)
-	// https://en.wikibooks.org/wiki/Cg_Programming/Unity/Debugging_of_Shaders
-	float3 normal : NORMAL;
-	float4 tangent : TANGENT;
 
-};
 
-/**
-  Output from vertex shader, input to fragment shader.
-*/
-struct v2f {
-	float4 pos : SV_POSITION;
-	float2 uv : TEXCOORD1;
-	float3 tangentWorldSpace : TEXCOORD2;
-	float3 normalWorldSpace : TEXCOORD3;
-	float3 biTangentWorldSpace : TEXCOORD4;
+float Normalize_Depth(float z, float near, float far) 
+{
+	return (z - near) / (far - near);
+}
 
-	float4 posModelSpace : TEXCOORD5;
-	float4 deepOpacity : TEXCOORD6;
-
-	float4 scrPos : TEXCOORD7;
-};
-
+// Convert from normalized to original depth
+float Get_True_Depth(float z, float near, float far)
+{
+	return z * (far - near) + near;
+}
 
 // Good reference for lighting calculations (and Unity shader examples):
 // https://en.wikibooks.org/wiki/Cg_Programming/Unity/Specular_Highlights
