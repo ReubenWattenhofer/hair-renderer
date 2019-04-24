@@ -7,13 +7,13 @@
 
 float Normalize_Depth(float z, float near, float far) 
 {
-	return (z - near) / (far - near);
+	return (z - near) / (far - near) * 1;
 }
 
 // Convert from normalized to original depth
 float Get_True_Depth(float z, float near, float far)
 {
-	return z * (far - near) + near;
+	return z / 1 * (far - near) + near;
 }
 
 // Good reference for lighting calculations (and Unity shader examples):
@@ -48,7 +48,8 @@ float4 HairLighting(float3 tangent, float3 normal, float3 lightVec, float3 viewV
 	float3 t2 = ShiftTangent(tangent, normal, secondaryShift + shiftTex);
 	// diffuse lighting: the lerp shifts the shadow boundary for a softer look
 	float3 diffuse = saturate(lerp(0.25, 1.0, dot(normal, lightVec) + ambientColor));
-	diffuse *= diffuseAlbedo;
+	//float3 diffuse = saturate(lerp(0.25, 1.0, dot(normal, lightVec)));
+	diffuse *= diffuseAlbedo * tint;
 	
 	// specular lighting
 	float3 specular = specularColor1 * StrandSpecular(t1, viewVec, lightVec, specExp1);

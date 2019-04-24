@@ -640,6 +640,8 @@ private MeshRenderer m_renderer;
     public RenderTexture m_ShadowmapCopy;
     public RenderTexture m_DeepOpacityMap;
 
+    public GameObject head;
+
     // From Unity's command buffer example code
     // Remove command buffers from the main camera -- see Unity example code for more thorough cleanup
     private void Cleanup()
@@ -678,12 +680,27 @@ private MeshRenderer m_renderer;
         deep_opacity_buffer.SetRenderTarget(new RenderTargetIdentifier(m_ShadowmapCopy));
 
         // clear render texture before drawing to it each frame!!
-        deep_opacity_buffer.ClearRenderTarget(true, true, Color.black);
+        deep_opacity_buffer.ClearRenderTarget(true, true, Color.white);
         // Draw depth pass
         deep_opacity_buffer.DrawRenderer(GetComponent<Renderer>(), depthPassCulled);
 
         deep_opacity_buffer.SetGlobalTexture("_DepthCulled", new RenderTargetIdentifier(m_ShadowmapCopy));
 
+        //int tempID2 = Shader.PropertyToID("_Temp2");
+        //deep_opacity_buffer.GetTemporaryRT(tempID2, -1, -1, 0, FilterMode.Bilinear);
+        //deep_opacity_buffer.SetRenderTarget(tempID2);
+        //deep_opacity_buffer.ClearRenderTarget(true, true, Color.white);
+        //deep_opacity_buffer.DrawRenderer(head.GetComponent<Renderer>(), depthPassCulled);
+        ////deep_opacity_buffer.SetGlobalTexture("_DepthCulled", new RenderTargetIdentifier(m_ShadowmapCopy));
+        //deep_opacity_buffer.SetGlobalTexture("_HeadDepth", tempID2);
+
+        int tempID3 = Shader.PropertyToID("_Temp3");
+        deep_opacity_buffer.GetTemporaryRT(tempID3, -1, -1, 0, FilterMode.Bilinear);
+        deep_opacity_buffer.SetRenderTarget(tempID3);
+        deep_opacity_buffer.ClearRenderTarget(true, true, Color.white);
+        deep_opacity_buffer.DrawRenderer(GetComponent<Renderer>(), depthPassNoCull);
+        //deep_opacity_buffer.SetGlobalTexture("_DepthCulled", new RenderTargetIdentifier(m_ShadowmapCopy));
+        deep_opacity_buffer.SetGlobalTexture("_DepthCulled", tempID3);
 
         //int tempID2 = Shader.PropertyToID("_Temp2");
         //deep_opacity_buffer.GetTemporaryRT(tempID2, -1, -1, 0, FilterMode.Bilinear);
@@ -692,8 +709,10 @@ private MeshRenderer m_renderer;
         //deep_opacity_buffer.SetRenderTarget(new RenderTargetIdentifier(m_DeepOpacityMap));
         //deep_opacity_buffer.ClearRenderTarget(true, true, Color.white);
 
-        deep_opacity_buffer.Blit(new RenderTargetIdentifier(m_ShadowmapCopy), new RenderTargetIdentifier(m_DeepOpacityMap));
-        //deep_opacity_buffer.DrawRenderer(GetComponent<Renderer>(), depthPassNoCull);
+        //deep_opacity_buffer.Blit(new RenderTargetIdentifier(m_ShadowmapCopy), new RenderTargetIdentifier(m_DeepOpacityMap));
+        deep_opacity_buffer.Blit(tempID3, new RenderTargetIdentifier(m_DeepOpacityMap));
+        //deep_opacity_buffer.Blit(tempID2, new RenderTargetIdentifier(m_DeepOpacityMap));
+
         deep_opacity_buffer.DrawRenderer(GetComponent<Renderer>(), opacityPass);
 
         //@TODO: change back to tempID2
@@ -703,9 +722,22 @@ private MeshRenderer m_renderer;
         //deep_opacity_buffer.DrawRenderer(GetComponent<Renderer>(), opacityPass);
 
 
-        depthCam.AddCommandBuffer(CameraEvent.AfterDepthTexture, deep_opacity_buffer);
+        depthCam.AddCommandBuffer(CameraEvent.BeforeDepthTexture, deep_opacity_buffer);
+
+        CommandBuffer head_depth_buffer = new CommandBuffer();
+        head_depth_buffer.name = "head depth buffer";
+
+        int tempID2 = Shader.PropertyToID("_Temp2");
+        head_depth_buffer.GetTemporaryRT(tempID2, -1, -1, 0, FilterMode.Bilinear);
+        head_depth_buffer.SetRenderTarget(tempID2);
+        head_depth_buffer.ClearRenderTarget(true, true, Color.white);
+        head_depth_buffer.DrawRenderer(head.GetComponent<Renderer>(), depthPassCulled);
+        //deep_opacity_buffer.SetGlobalTexture("_DepthCulled", new RenderTargetIdentifier(m_ShadowmapCopy));
+        head_depth_buffer.SetGlobalTexture("_HeadDepth", tempID2);
+
+        depthCam.AddCommandBuffer(CameraEvent.AfterDepthTexture, head_depth_buffer);
     }
-    
+
 
 
     //void OnRenderImage(RenderTexture source, RenderTexture destination)

@@ -5,6 +5,7 @@ Shader "Custom/DepthNoCull" {
 	//Tags {"Queue" = "Transparent" "RenderType" = "Transparent" }
 	LOD 100
 	ZWRITE On
+	//ZWRITE Off
 	Cull Off
 
 	Pass{
@@ -41,10 +42,14 @@ Shader "Custom/DepthNoCull" {
 	//Fragment Shader
 	half4 frag(v2f i) : COLOR{
 		//float depthValue = Linear01Depth(tex2Dproj(_CameraDepthTexture, UNITY_PROJ_COORD(i.scrPos)).r);
-		float culledDepth = tex2Dproj(_DepthCulled, UNITY_PROJ_COORD(i.scrPos)).r;
+		//float culledDepth = tex2Dproj(_DepthCulled, UNITY_PROJ_COORD(i.scrPos)).r;
+		float culledDepth = tex2D(_DepthCulled, i.scrPos).r;
+
+		//float culledDepth = tex2Dproj(_DepthCulled, UNITY_PROJ_COORD(i.scrPos)).r;
 		//float depthValue = Linear01Depth(i.pos.z);
 		float depthValue = Normalize_Depth(-i.viewPos.z, _DepthCameraPlanes.x, _DepthCameraPlanes.y);
 
+		//float d = culledDepth;
 		float d = depthValue;
 		if (culledDepth < depthValue) {
 			d = culledDepth;
@@ -53,10 +58,10 @@ Shader "Custom/DepthNoCull" {
 		half4 depth;
 
 		depth.r = d;
-		depth.g = d;
-		depth.b = d;
+		depth.g = 0;
+		depth.b = 0;
 
-		depth.a = 1;
+		depth.a = 0;
 		//discard;
 		return depth;
 

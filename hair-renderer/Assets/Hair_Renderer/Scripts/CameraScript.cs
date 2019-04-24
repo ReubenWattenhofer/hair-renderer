@@ -9,7 +9,7 @@ public class CameraScript : MonoBehaviour
 {
     //public Material mat;
     private RenderTexture m_ShadowmapCopy;
-    //public RenderTexture rt;
+    public RenderTexture rt;
 
     // Use ctrl-shift-f to place camera in current editor view
     void Start()
@@ -18,6 +18,12 @@ public class CameraScript : MonoBehaviour
         //Camera.main.depthTextureMode = DepthTextureMode.Depth;
 
         //rt = GetComponent<Camera>().targetTexture;
+        rt.width = 1000;
+        rt.height = 1000;
+        rt.width = (int) ((float)rt.width * GetComponent<Camera>().aspect);
+        //rt.height = GetComponent<Camera>().scaledPixelHeight;
+        //rt.width = GetComponent<Camera>().pixelWidth;
+        //rt.height = GetComponent<Camera>().pixelHeight;
 
     }
 

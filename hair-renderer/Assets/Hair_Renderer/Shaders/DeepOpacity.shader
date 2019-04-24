@@ -47,7 +47,8 @@ Shader "Custom/DeepOpacity" {
 	//Fragment Shader
 	half4 frag(v2f i) : COLOR{
 		//float depthValue = Linear01Depth(tex2Dproj(_CameraDepthTexture, UNITY_PROJ_COORD(i.scrPos)).r);
-		float culledDepth = tex2Dproj(_DepthCulled, UNITY_PROJ_COORD(i.scrPos)).r;
+		//float culledDepth = tex2Dproj(_DepthCulled, UNITY_PROJ_COORD(i.scrPos)).r;
+		float culledDepth = tex2D(_DepthCulled, i.scrPos).r;
 		culledDepth = Get_True_Depth(culledDepth, _DepthCameraPlanes.x, _DepthCameraPlanes.y);
 
 		//float depthValue = Normalize_Depth(-i.viewPos.z, _DepthCameraPlanes.x, _DepthCameraPlanes.y);			   
