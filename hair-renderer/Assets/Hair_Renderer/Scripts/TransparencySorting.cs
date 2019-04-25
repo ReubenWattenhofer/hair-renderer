@@ -15,13 +15,13 @@ public class TransparencySorting : MonoBehaviour
 
     private CommandBuffer main_depth_buffer;
 
-    private RenderTexture depth_range_rt;
+    public RenderTexture depth_range_rt;
     private RenderTexture occupancy_rt;
     private RenderTexture slab_rt;
 
     private void Start()
     {
-        depth_range_rt = new RenderTexture(Screen.width, Screen.height, 0);        
+        //depth_range_rt = new RenderTexture(Screen.width, Screen.height, 0);        
         //occupancy_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBInt);
         occupancy_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.RGBAUShort);
         slab_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
@@ -56,7 +56,10 @@ public class TransparencySorting : MonoBehaviour
         //main_depth_buffer.GetTemporaryRT(tempID4, -1, -1, 0, FilterMode.Bilinear);
         //main_depth_buffer.SetRenderTarget(tempID4);
         main_depth_buffer.SetRenderTarget(new RenderTargetIdentifier(depth_range_rt));
-        main_depth_buffer.ClearRenderTarget(true, true, Color.white);
+        Color clear = Color.white;
+        clear.a = 0;
+
+        main_depth_buffer.ClearRenderTarget(true, true, clear);
         main_depth_buffer.DrawRenderer(hair.GetComponent<Renderer>(), depth_range_shader);
         main_depth_buffer.SetGlobalTexture("_MainDepth", new RenderTargetIdentifier(depth_range_rt));
         //main_depth_buffer.SetGlobalTexture("_MainDepth", tempID4);
@@ -77,7 +80,7 @@ public class TransparencySorting : MonoBehaviour
     //void OnRenderImage(RenderTexture source, RenderTexture destination)
     //{
     //    //depthCam.rect = new Rect(0, 0, 1, 1);
-    //    Graphics.Blit(slab_rt, destination);
+    //    Graphics.Blit(depth_range_rt, destination);
     //}
 
 }

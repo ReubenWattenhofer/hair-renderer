@@ -448,8 +448,8 @@ Shader "Custom/basic"
 
 					float depthOrder = lerp(previousFragments, maxFragments, interpolation);
 					//depthOrder = 2 * (depthOrder / allFragments);
-					depthOrder = relativeDepth;
-					depthOrder = max(0, depthOrder);
+					//depthOrder = relativeDepth; //depthValue
+					//depthOrder = max(0, depthOrder);
 					//depthOrder = 0;
 
 					float4 colorIn = float4(0, 0, 0, 1);

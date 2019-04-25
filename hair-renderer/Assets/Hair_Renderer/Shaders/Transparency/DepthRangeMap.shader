@@ -10,6 +10,7 @@
 		// from "Hair Self Shadowing and Transparency Depth Ordering Using Occupancy maps"
 		// Min blending for color, Max blending for alpha
 		BlendOp Min, Max
+		//BlendOp Max, Min
 
 
 		Pass{
