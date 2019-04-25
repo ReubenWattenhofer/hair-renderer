@@ -9,11 +9,12 @@
 // https://stackoverflow.com/questions/109023/how-to-count-the-number-of-set-bits-in-a-32-bit-integer
 int numberOfSetBits(uint i)
 {
-	// Java: use >>> instead of >>
-	// C or C++: use uint32_t
-	i = i - ((i >> 1) & 0x55555555);
-	i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
-	return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+	return 1;
+	//// Java: use >>> instead of >>
+	//// C or C++: use uint32_t
+	//i = i - ((i >> 1) & 0x55555555);
+	//i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
+	//return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 }
 
 // Sets all upper bits of input to 0
@@ -21,13 +22,13 @@ uint mask(uint n, int num_rightmost_bits)
 {
 	uint result = n;
 
-	uint mask = 0;
-	for (int i = 0; i < num_rightmost_bits; i++)
-	{
-		mask |= 1 << i;
-	}
+	//uint mask = 0;
+	//for (int i = 0; i < num_rightmost_bits; i++)
+	//{
+	//	mask |= 1 << i;
+	//}
 
-	result &= mask;
+	//result &= mask;
 
 	return result;
 }
