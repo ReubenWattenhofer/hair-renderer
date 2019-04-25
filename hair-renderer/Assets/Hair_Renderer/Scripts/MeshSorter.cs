@@ -635,7 +635,7 @@ private MeshRenderer m_renderer;
         //return point;
     }
 
-    private CommandBuffer deep_opacity_buffer;
+    private CommandBuffer deep_opacity_buffer, head_depth_buffer;
 
     public RenderTexture m_ShadowmapCopy;
     public RenderTexture m_DeepOpacityMap;
@@ -646,7 +646,8 @@ private MeshRenderer m_renderer;
     // Remove command buffers from the main camera -- see Unity example code for more thorough cleanup
     private void Cleanup()
     {
-        depthCam.RemoveCommandBuffer(CameraEvent.AfterDepthTexture, deep_opacity_buffer);
+        depthCam.RemoveCommandBuffer(CameraEvent.BeforeDepthTexture, deep_opacity_buffer);
+        depthCam.RemoveCommandBuffer(CameraEvent.AfterDepthTexture, head_depth_buffer);
     }
 
 
@@ -724,7 +725,7 @@ private MeshRenderer m_renderer;
 
         depthCam.AddCommandBuffer(CameraEvent.BeforeDepthTexture, deep_opacity_buffer);
 
-        CommandBuffer head_depth_buffer = new CommandBuffer();
+        head_depth_buffer = new CommandBuffer();
         head_depth_buffer.name = "head depth buffer";
 
         int tempID2 = Shader.PropertyToID("_Temp2");
@@ -736,6 +737,8 @@ private MeshRenderer m_renderer;
         head_depth_buffer.SetGlobalTexture("_HeadDepth", tempID2);
 
         depthCam.AddCommandBuffer(CameraEvent.AfterDepthTexture, head_depth_buffer);
+
+        
     }
 
 

@@ -40,7 +40,7 @@ Shader "Custom/DepthNoCull" {
 	}
 
 	//Fragment Shader
-	half4 frag(v2f i) : COLOR{
+	float4 frag(v2f i) : COLOR{
 		//float depthValue = Linear01Depth(tex2Dproj(_CameraDepthTexture, UNITY_PROJ_COORD(i.scrPos)).r);
 		//float culledDepth = tex2Dproj(_DepthCulled, UNITY_PROJ_COORD(i.scrPos)).r;
 		float culledDepth = tex2D(_DepthCulled, i.scrPos).r;
@@ -55,7 +55,7 @@ Shader "Custom/DepthNoCull" {
 			d = culledDepth;
 		}
 
-		half4 depth;
+		float4 depth;
 
 		depth.r = d;
 		depth.g = 0;

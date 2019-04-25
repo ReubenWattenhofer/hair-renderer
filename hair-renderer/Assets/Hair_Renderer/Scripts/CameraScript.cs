@@ -14,8 +14,7 @@ public class CameraScript : MonoBehaviour
     // Use ctrl-shift-f to place camera in current editor view
     void Start()
     {
-        GetComponent<Camera>().depthTextureMode = DepthTextureMode.Depth;
-        //Camera.main.depthTextureMode = DepthTextureMode.Depth;
+        //GetComponent<Camera>().depthTextureMode = DepthTextureMode.Depth;
 
         //rt = GetComponent<Camera>().targetTexture;
         rt.width = 1000;

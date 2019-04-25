@@ -73,8 +73,8 @@ public class TestScreenPosRunner : MonoBehaviour
         Shader.SetGlobalFloat("_Layer3Thickness", layer3Thickness);
         Shader.SetGlobalFloat("_OpacityPerFragment", opacityPerFragment);
 
-        Debug.Log("_Layer1Thickness " + layer1Thickness);
-        Debug.Log("_Layer2Thickness " + layer2Thickness);
+        //Debug.Log("_Layer1Thickness " + layer1Thickness);
+        //Debug.Log("_Layer2Thickness " + layer2Thickness);
 
         //Debug.Log("---------------------------------------");
         //Debug.Log("World to camera matrix is " + V);
