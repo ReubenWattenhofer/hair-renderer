@@ -204,6 +204,8 @@ Shader "Custom/basic"
 				{
 					fixed4 col;
 				
+					i.scrPos /= i.scrPos.w;
+
 					// Get light direction in world space.
 					// @TODO: add support for point lights (needs different approach)
 					float3 lightDirection = normalize(_WorldSpaceLightPos0.xyz);
@@ -448,8 +450,8 @@ Shader "Custom/basic"
 
 					float depthOrder = lerp(previousFragments, maxFragments, interpolation);
 					//depthOrder = 2 * (depthOrder / allFragments);
-					//depthOrder = relativeDepth; //depthValue
-					//depthOrder = max(0, depthOrder);
+					depthOrder = relativeDepth; //depthValue
+					depthOrder = max(0, depthOrder);
 					//depthOrder = 0;
 
 					float4 colorIn = float4(0, 0, 0, 1);
@@ -460,6 +462,12 @@ Shader "Custom/basic"
 					col.rgb = lerp(colorOut, opacity_rgb, max(_OpacityRGB, _OpacityGreyscale));
 					col.a = colorOut.a;
 					//col.rgb *= (1 - opacity);
+
+				/*	col.r = nearFar.r;
+					col.g = 0;
+					col.b = nearFar.a;
+					col.a = 1;*/
+
 
 					// ambient lighting
 					// https://docs.unity3d.com/Manual/SL-VertexFragmentShaderExamples.html

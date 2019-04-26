@@ -40,6 +40,7 @@
 
 	//Fragment Shader
 	int4 frag(v2f i) : COLOR {
+		i.scrPos /= i.scrPos.w;
 
 		float4 nearFar = tex2D(_MainDepth, i.scrPos);
 
@@ -48,7 +49,7 @@
 		// Get relative depth of texel
 		float relativeDepth = (depthValue - nearFar.r) / (nearFar.a - nearFar.r);
 		// Get closest slice
-		int slice = floor(relativeDepth * 64);
+		float slice = floor(relativeDepth * 64);
 
 		// Figure out which color channel to put the data into
 		int color = floor(slice / 16);

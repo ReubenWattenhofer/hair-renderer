@@ -41,6 +41,7 @@
 
 		//Fragment Shader
 		float4 frag(v2f i) : COLOR {
+			i.scrPos /= i.scrPos.w;
 
 			float4 nearFar = tex2D(_MainDepth, i.scrPos);
 

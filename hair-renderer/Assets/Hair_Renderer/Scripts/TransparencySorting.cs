@@ -80,7 +80,7 @@ public class TransparencySorting : MonoBehaviour
     //void OnRenderImage(RenderTexture source, RenderTexture destination)
     //{
     //    //depthCam.rect = new Rect(0, 0, 1, 1);
-    //    Graphics.Blit(depth_range_rt, destination);
+    //    Graphics.Blit(occupancy_rt, destination);
     //}
 
 }
