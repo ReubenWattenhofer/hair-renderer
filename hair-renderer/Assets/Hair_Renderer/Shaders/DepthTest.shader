@@ -287,7 +287,7 @@ Shader "Custom/DepthGrayscale" {
 	float4 frag(v2f i) : COLOR {
 	   //float depthValue = Linear01Depth(tex2Dproj(_CameraDepthTexture, UNITY_PROJ_COORD(i.scrPos)).r);
 
-		float depthValue = Normalize_Depth(-i.viewPos.z, _DepthCameraPlanes.x, _DepthCameraPlanes.y);
+		float depthValue = Normalize_Depth(-i.viewPos.z, _DepthCameraPlanes.x, _DepthCameraPlanes.y, 1);
 		
 		 //float depthValue = (-i.viewPos.z - _DepthCameraPlanes.x)
 			//			/ (_DepthCameraPlanes.y - _DepthCameraPlanes.x);

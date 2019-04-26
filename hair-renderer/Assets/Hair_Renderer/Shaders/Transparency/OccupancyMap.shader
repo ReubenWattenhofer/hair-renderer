@@ -9,6 +9,7 @@
 			Cull Off
 
 		// Bitwise OR
+		//BlendOp Add
 		BlendOp LogicalOr
 
 		Pass{
@@ -44,7 +45,7 @@
 
 		float4 nearFar = tex2D(_MainDepth, i.scrPos);
 
-		float depthValue = Normalize_Depth(-i.viewPos.z, _ProjectionParams.y, _ProjectionParams.z);
+		float depthValue = Normalize_Depth(-i.viewPos.z, _ProjectionParams.y, _ProjectionParams.z, 10);
 
 		// Get relative depth of texel
 		float relativeDepth = (depthValue - nearFar.r) / (nearFar.a - nearFar.r);
@@ -79,7 +80,7 @@
 			depth.a |= 1 << relativeSlice;
 		}
 
-		//discard;
+		discard;
 		return depth;
 
 	}

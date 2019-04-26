@@ -49,7 +49,7 @@ Shader "Custom/DeepOpacity" {
 		//float depthValue = Linear01Depth(tex2Dproj(_CameraDepthTexture, UNITY_PROJ_COORD(i.scrPos)).r);
 		//float culledDepth = tex2Dproj(_DepthCulled, UNITY_PROJ_COORD(i.scrPos)).r;
 		float culledDepth = tex2D(_DepthCulled, i.scrPos).r;
-		culledDepth = Get_True_Depth(culledDepth, _DepthCameraPlanes.x, _DepthCameraPlanes.y);
+		culledDepth = Get_True_Depth(culledDepth, _DepthCameraPlanes.x, _DepthCameraPlanes.y, 1);
 
 		//float depthValue = Normalize_Depth(-i.viewPos.z, _DepthCameraPlanes.x, _DepthCameraPlanes.y);			   
 		float z = -i.viewPos.z;

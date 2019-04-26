@@ -307,8 +307,8 @@ Shader "Custom/basic"
 
 					//float z = Normalize_Depth(-shadowLightSpace.z, _DepthCameraPlanes.x, _DepthCameraPlanes.y);
 
-					float culledDepth = Get_True_Depth(lightDepth.r, _DepthCameraPlanes.x, _DepthCameraPlanes.y);
-					headOcclusion = Get_True_Depth(headOcclusion.r, _DepthCameraPlanes.x, _DepthCameraPlanes.y);
+					float culledDepth = Get_True_Depth(lightDepth.r, _DepthCameraPlanes.x, _DepthCameraPlanes.y, 1);
+					headOcclusion = Get_True_Depth(headOcclusion.r, _DepthCameraPlanes.x, _DepthCameraPlanes.y, 10);
 
 					culledDepth = min(culledDepth, headOcclusion);
 
@@ -376,7 +376,7 @@ Shader "Custom/basic"
 
 					float4 headNearFar = tex2D(_HeadMainDepth, i.scrPos);
 
-					float depthValue = Normalize_Depth(-i.viewPos.z, _ProjectionParams.y, _ProjectionParams.z);
+					float depthValue = Normalize_Depth(-i.viewPos.z, _ProjectionParams.y, _ProjectionParams.z, 10);
 
 					if (depthValue >= headNearFar.r) {
 						discard;
@@ -452,13 +452,18 @@ Shader "Custom/basic"
 						previousSetBits = numberOfSetBits(mask(occupancy.a, max(0, relativeSlice - 1)));
 					}
 
-					float previousFragments = allPreviousFragments + ((fragmentsInSlab / setBits) * previousSetBits);
-					float maxFragments = previousFragments + (fragmentsInSlab / setBits);
-					float interpolation = ceil(relativeDepth * 64) - (relativeDepth * 64);
+					float s = slab;
+					float inside = relativeDepth - s / 4;// ceil(relativeDepth * 4) - (relativeDepth * 4);
+					//float inside = ceil(relativeDepth * 4) - (relativeDepth * 4);
+					float previousFragments = allPreviousFragments + (fragmentsInSlab * inside);// +((fragmentsInSlab / setBits) * previousSetBits);
+					//float previousFragments = allPreviousFragments + 0;// ((fragmentsInSlab / setBits) * previousSetBits);
+					//float maxFragments = previousFragments +(fragmentsInSlab / setBits);
+					float maxFragments = previousFragments + (fragmentsInSlab / 1);
+					float interpolation = 0;// ceil(relativeDepth * 64) - (relativeDepth * 64);
 
 					float depthOrder = lerp(previousFragments, maxFragments, interpolation);
 					//depthOrder = 2 * (depthOrder / allFragments);
-					depthOrder = relativeDepth; //depthValue
+					//depthOrder = relativeDepth; //depthValue
 					depthOrder = max(0, depthOrder);
 					//depthOrder = 0;
 

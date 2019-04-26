@@ -46,7 +46,7 @@
 
 	//Fragment Shader
 	float4 frag(v2f i) : COLOR{
-		float depthValue = Normalize_Depth(-i.viewPos.z, _ProjectionParams.y, _ProjectionParams.z);
+		float depthValue = Normalize_Depth(-i.viewPos.z, _ProjectionParams.y, _ProjectionParams.z, 10);
 
 		float4 depth;
 

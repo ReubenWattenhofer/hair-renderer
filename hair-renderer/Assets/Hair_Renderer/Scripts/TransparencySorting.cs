@@ -46,6 +46,8 @@ public class TransparencySorting : MonoBehaviour
         //head_depth_range_rt = new RenderTexture(Screen.width, Screen.height, 0);
 
         hair_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
+        //hair_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGB32);
+        //occupancy_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
         occupancy_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBInt);
         //occupancy_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.RGBAUShort);
         slab_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
@@ -105,15 +107,15 @@ public class TransparencySorting : MonoBehaviour
 
 
 
+        Color trueBlack = Color.black;
+        trueBlack.a = 0;
 
         main_depth_buffer.SetRenderTarget(new RenderTargetIdentifier(occupancy_rt));
-        main_depth_buffer.ClearRenderTarget(true, true, Color.black);
+        main_depth_buffer.ClearRenderTarget(true, true, trueBlack);
         main_depth_buffer.DrawRenderer(hair.GetComponent<Renderer>(), occupancy_shader);
         main_depth_buffer.SetGlobalTexture("_MainOccupancy", new RenderTargetIdentifier(occupancy_rt));
 
         main_depth_buffer.SetRenderTarget(new RenderTargetIdentifier(slab_rt));
-        Color trueBlack = Color.black;
-        trueBlack.a = 0;
         main_depth_buffer.ClearRenderTarget(true, true, trueBlack);
         main_depth_buffer.DrawRenderer(hair.GetComponent<Renderer>(), slab_shader);
         main_depth_buffer.SetGlobalTexture("_MainSlab", new RenderTargetIdentifier(slab_rt));
@@ -156,7 +158,7 @@ public class TransparencySorting : MonoBehaviour
     //void OnRenderImage(RenderTexture source, RenderTexture destination)
     //{
     //    //depthCam.rect = new Rect(0, 0, 1, 1);
-    //    Graphics.Blit(Camera.main.targetTexture, destination);
+    //    Graphics.Blit(occupancy_rt, destination);
     //}
 
 }

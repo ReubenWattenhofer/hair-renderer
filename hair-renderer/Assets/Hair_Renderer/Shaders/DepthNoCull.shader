@@ -47,7 +47,7 @@ Shader "Custom/DepthNoCull" {
 
 		//float culledDepth = tex2Dproj(_DepthCulled, UNITY_PROJ_COORD(i.scrPos)).r;
 		//float depthValue = Linear01Depth(i.pos.z);
-		float depthValue = Normalize_Depth(-i.viewPos.z, _DepthCameraPlanes.x, _DepthCameraPlanes.y);
+		float depthValue = Normalize_Depth(-i.viewPos.z, _DepthCameraPlanes.x, _DepthCameraPlanes.y, 1);
 
 		//float d = culledDepth;
 		float d = depthValue;

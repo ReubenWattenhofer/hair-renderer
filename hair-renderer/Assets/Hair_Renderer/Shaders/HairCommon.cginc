@@ -9,16 +9,16 @@
 // https://stackoverflow.com/questions/109023/how-to-count-the-number-of-set-bits-in-a-32-bit-integer
 int numberOfSetBits(int i)
 {
-	//int count = 0;
-	//i = max(0, i);
-	//while (i)
-	//{
-	//	count += i & 1;
-	//	i >>= 1;
-	//}
-	//return count;
+	int count = 0;
+	i = max(0, i);
+	while (i)
+	{
+		count += i & 1;
+		i >>= 1;
+	}
+	return count;
 	
-	return 1;
+	//return 1;
 	//// Java: use >>> instead of >>
 	//// C or C++: use uint32_t
 	//i = i - ((i >> 1) & 0x55555555);
@@ -45,15 +45,15 @@ uint mask(int n, int num_rightmost_bits)
 }
 
 
-float Normalize_Depth(float z, float near, float far) 
+float Normalize_Depth(float z, float near, float far, float scale) 
 {
-	return (z - near) / (far - near) * 1;
+	return ((scale *z) - near) / (far - near);
 }
 
 // Convert from normalized to original depth
-float Get_True_Depth(float z, float near, float far)
+float Get_True_Depth(float z, float near, float far, float originalScale)
 {
-	return z / 1 * (far - near) + near;
+	return (z * (far - near) + near) / originalScale;
 }
 
 // Good reference for lighting calculations (and Unity shader examples):

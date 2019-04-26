@@ -87,6 +87,7 @@
 			{
 			//col = slabs;//slabs// hair + (background * pow(1 - 0.8, allFragments));
 				col = hair + (background * pow(1 - 0.8, allFragments));
+				//col = hair + background;
 			}
 					   
 			return col;

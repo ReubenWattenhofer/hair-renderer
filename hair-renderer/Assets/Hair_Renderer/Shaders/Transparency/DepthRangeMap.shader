@@ -64,7 +64,7 @@
 		float4 frag(v2f i) : COLOR{
 			i.scrPos /= i.scrPos.w;
 
-			float depthValue = Normalize_Depth(-i.viewPos.z, _ProjectionParams.y, _ProjectionParams.z);
+			float depthValue = Normalize_Depth(-i.viewPos.z, _ProjectionParams.y, _ProjectionParams.z, 10);
 
 			float4 headNearFar = tex2D(_HeadMainDepth, i.scrPos);
 
