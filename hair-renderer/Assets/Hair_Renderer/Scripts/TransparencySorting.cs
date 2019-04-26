@@ -7,16 +7,30 @@ using UnityEngine.Rendering;
 [ExecuteInEditMode]
 public class TransparencySorting : MonoBehaviour
 {
+    [Header ("Transparency Shader Variables")]
+    [Range(0, 0.9999f)]
+    [Tooltip("Multiplied against alpha map")]
     public float alphaMultiplier = 0.9f;
+    [Range(0, 1f)]
+    [Tooltip("Threshold for alpha cutoff -- fragments with alpha value lower than the threshold will be culled")]
     public float cutoutThresh = 0.5f;
 
+    [Header("Renderers")]
+    [Tooltip("GameObject that directly contains the hair mesh renderer")]
     public GameObject hair;
+    [Tooltip("GameObject that directly contains the head mesh renderer")]
     public GameObject head;
 
+    [Header("Shaders")]
+    [Tooltip("Constructs depth-range map for hair")]
     public Material depth_range_shader;
+    [Tooltip("Constructs depth-range map for head")]
     public Material head_depth_range_shader;
+    [Tooltip("Constructs occupancy map for hair")]
     public Material occupancy_shader;
+    [Tooltip("Constructs slab map for hair")]
     public Material slab_shader;
+    [Tooltip("Renders hair to a buffer")]
     public Material hairPass;
 
     //public Material backgroundMaskPass;
@@ -26,24 +40,19 @@ public class TransparencySorting : MonoBehaviour
     private CommandBuffer main_depth_buffer;
     private CommandBuffer hair_buffer;
 
-    public RenderTexture depth_range_rt;
-    public RenderTexture head_depth_range_rt;
-    public RenderTexture hair_rt;
+    //[Header("Render Textures")]
+    private RenderTexture depth_range_rt;
+    private RenderTexture head_depth_range_rt;
+    private RenderTexture hair_rt;
     private RenderTexture occupancy_rt;
     private RenderTexture slab_rt;
 
     public RenderTexture background_rt;
 
-    private void OnEnable()
-    {
-        //hair_rt.width = Screen.width;
-        //hair_rt.height = Screen.height;
-    }
-
     private void Start()
     {
-        //depth_range_rt = new RenderTexture(Screen.width, Screen.height, 0);
-        //head_depth_range_rt = new RenderTexture(Screen.width, Screen.height, 0);
+        depth_range_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
+        head_depth_range_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
 
         hair_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
         //hair_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGB32);
@@ -64,10 +73,6 @@ public class TransparencySorting : MonoBehaviour
 
     private void Update()
     {
-        alphaMultiplier = Mathf.Max(0, alphaMultiplier);
-        alphaMultiplier = Mathf.Min(0.99999f, alphaMultiplier);
-        cutoutThresh = Mathf.Max(0, cutoutThresh);
-        cutoutThresh = Mathf.Min(1f, cutoutThresh);
 
         Shader.SetGlobalFloat("_AlphaMultiplier", alphaMultiplier);
         Shader.SetGlobalFloat("_CutoutThresh", cutoutThresh);
@@ -88,12 +93,12 @@ public class TransparencySorting : MonoBehaviour
         main_depth_buffer = new CommandBuffer();
         main_depth_buffer.name = "main depth buffer";
 
-        //int tempID4 = Shader.PropertyToID("_Temp4");
-        //main_depth_buffer.GetTemporaryRT(tempID4, -1, -1, 0, FilterMode.Bilinear);
-        //main_depth_buffer.SetRenderTarget(tempID4);
+
         Color clear = Color.white;
+        // alpha needs to be 0 because of the way the depth-range maps are created (min max blending)
         clear.a = 0;
 
+        // The head depth map is important for properly creating the hair depth-range map
         main_depth_buffer.SetRenderTarget(new RenderTargetIdentifier(head_depth_range_rt));
         main_depth_buffer.ClearRenderTarget(true, true, clear);
         main_depth_buffer.DrawRenderer(head.GetComponent<Renderer>(), head_depth_range_shader);
@@ -103,10 +108,10 @@ public class TransparencySorting : MonoBehaviour
         main_depth_buffer.ClearRenderTarget(true, true, clear);
         main_depth_buffer.DrawRenderer(hair.GetComponent<Renderer>(), depth_range_shader);
         main_depth_buffer.SetGlobalTexture("_MainDepth", new RenderTargetIdentifier(depth_range_rt));
-        //main_depth_buffer.SetGlobalTexture("_MainDepth", tempID4);
 
 
-
+        // Create the occupancy and slab maps
+        // @TODO: figure out how to create the occupancy map properly
         Color trueBlack = Color.black;
         trueBlack.a = 0;
 
@@ -123,42 +128,19 @@ public class TransparencySorting : MonoBehaviour
         Camera.main.AddCommandBuffer(CameraEvent.BeforeDepthTexture, main_depth_buffer);
 
 
+        // Render the hair and store it in a buffer -- the hair mesh renderer will combine this buffer with the
+        // background, completing the rendering
         hair_buffer = new CommandBuffer();
         hair_buffer.name = "hair buffer";
-
-        //int tempID4 = Shader.PropertyToID("_Temp4");
-        //hair_buffer.GetTemporaryRT(tempID4, -1, -1, 0, FilterMode.Bilinear);
+        
         hair_buffer.SetRenderTarget(new RenderTargetIdentifier(hair_rt));
         hair_buffer.ClearRenderTarget(true, true, Color.black);
         hair_buffer.DrawRenderer(hair.GetComponent<Renderer>(), hairPass);
-        //deep_opacity_buffer.SetGlobalTexture("_DepthCulled", new RenderTargetIdentifier(m_ShadowmapCopy));
         hair_buffer.SetGlobalTexture("_Hair", new RenderTargetIdentifier(hair_rt));
 
-        //int tempID4 = Shader.PropertyToID("_Temp4");
-        //hair_buffer.GetTemporaryRT(tempID4, -1, -1, 0, FilterMode.Bilinear);
-        //hair_buffer.SetRenderTarget(tempID4);
-        //hair_buffer.SetRenderTarget(new RenderTargetIdentifier(background_rt));
-        //hair_buffer.Blit(new RenderTargetIdentifier(Camera.main.targetTexture),
-        //    new RenderTargetIdentifier(background_rt));
-
-        //hair_buffer.SetGlobalTexture("_Background", new RenderTargetIdentifier(background_rt));
-        //hair_buffer.SetGlobalTexture("_Background", new RenderTargetIdentifier(Camera.main.targetTexture));
-        //hair_buffer.SetGlobalTexture("_Background", tempID4);
-        //hair_buffer.SetRenderTarget(new RenderTargetIdentifier(Camera.main.targetTexture));
-        //hair_buffer.SetRenderTarget(new RenderTargetIdentifier(Camera.main.targetDisplay));
-        //hair_buffer.DrawRenderer(hair.GetComponent<Renderer>(), backgroundMaskPass);
-        //hair_buffer.DrawRenderer(hair.GetComponent<Renderer>(), backgroundHairCombinePass);
-
-        //hair_buffer.SetGlobalTexture("_Hair", new RenderTargetIdentifier(Camera.main.targetTexture));
-
-
+        // The exact order isn't that important, as long as the hair buffer is completed before it needs to be
+        // rendered to the scene -- otherwise a lag effect will occur
         Camera.main.AddCommandBuffer(CameraEvent.AfterDepthTexture, hair_buffer);
     }
-
-    //void OnRenderImage(RenderTexture source, RenderTexture destination)
-    //{
-    //    //depthCam.rect = new Rect(0, 0, 1, 1);
-    //    Graphics.Blit(occupancy_rt, destination);
-    //}
 
 }

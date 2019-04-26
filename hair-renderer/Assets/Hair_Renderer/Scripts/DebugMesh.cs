@@ -30,12 +30,6 @@ public class DebugMesh : MonoBehaviour
         // Get instantiated mesh
         Mesh mesh = GetComponent<MeshFilter>().sharedMesh;
 
-        // Get one of the mesh tangents
-        //Vector4[] tangents = mesh.tangents;
-        //Vector3[] vertices = mesh.vertices;
-
-        //Vector3 tangent = new Vector3((float)(tangent.x * 2.0), (float)(tangent.y * 2.0), (float)(tangent.z * 2.0));
-
         // Display the tangent
         for (int i = 0; i < mesh.tangents.Length; i++)
         {
@@ -55,18 +49,6 @@ public class DebugMesh : MonoBehaviour
             if (showNormals)
                 Debug.DrawLine(worldPos, worldPos + normal * 2.0f, Color.blue);
         }
-        //Debug.Log(mesh.tangents.Length);
 
-
-        //// Randomly change vertices
-        //Vector3[] vertices = mesh.vertices;
-        //int p = 0;
-        //while (p < vertices.Length)
-        //{
-        //    vertices[p] += new Vector3(0, Random.Range(-0.3F, 0.3F), 0);
-        //    p++;
-        //}
-        //mesh.vertices = vertices;
-        //mesh.RecalculateNormals();
     }
 }

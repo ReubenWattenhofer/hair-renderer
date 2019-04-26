@@ -3,36 +3,30 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
+// This script displays the deep opacity map to the display (hopefully a render texture, not the actual display)
+// Not required for the hair rendering to work, but it's good for debugging 
+
+// Note that this can be extended to display as many render textures as wanted (just pass the display textures 
+// through the editor, and render to each one)
 //https://forum.unity.com/threads/enable-depth-texture-for-editor-camera.319097/
 [ExecuteInEditMode]
+[RequireComponent(typeof(Camera))]
 public class CameraScript : MonoBehaviour
 {
-    //public Material mat;
     private RenderTexture m_ShadowmapCopy;
-    public RenderTexture rt;
 
     // Use ctrl-shift-f to place camera in current editor view
     void Start()
     {
-        //GetComponent<Camera>().depthTextureMode = DepthTextureMode.Depth;
-
-        //rt = GetComponent<Camera>().targetTexture;
-        rt.width = 1000;
-        rt.height = 1000;
-        rt.width = (int) ((float)rt.width * GetComponent<Camera>().aspect);
-        //rt.height = GetComponent<Camera>().scaledPixelHeight;
-        //rt.width = GetComponent<Camera>().pixelWidth;
-        //rt.height = GetComponent<Camera>().pixelHeight;
-
     }
 
     // Update is called once per frame
     void Update()
     {
-        m_ShadowmapCopy = FindObjectOfType<MeshSorter>().m_DeepOpacityMap;
+        m_ShadowmapCopy = FindObjectOfType<DeepOpacity>().m_DeepOpacityMap;
     }
 
-    //////// http://williamchyr.com/2013/11/unity-shaders-depth-and-normal-textures/
+    // http://williamchyr.com/2013/11/unity-shaders-depth-and-normal-textures/
     //void OnRenderImage(RenderTexture source, RenderTexture destination)
     //{
     //    Graphics.Blit(source, destination, mat);

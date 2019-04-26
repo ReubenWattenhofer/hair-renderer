@@ -64,25 +64,28 @@
 		float4 frag(v2f i) : COLOR{
 			i.scrPos /= i.scrPos.w;
 
-			float depthValue = Normalize_Depth(-i.viewPos.z, _ProjectionParams.y, _ProjectionParams.z, 10);
+			float depthValue = Normalize_Depth(-i.viewPos.z, _ProjectionParams.y, _ProjectionParams.z);
 
 			float4 headNearFar = tex2D(_HeadMainDepth, i.scrPos);
 
 			float alpha = tex2D(_AlphaTex, i.uv).r * _AlphaMultiplier;
 
+			float4 depth;
+
 			if (depthValue >= headNearFar.r || alpha < _CutoutThresh) {
 				discard;
 			}
+			else {
+				// Near distance
+				depth.r = depthValue;
+				depth.g = 0;
+				depth.b = 0;
 
-			float4 depth;
+				// Far distance
+				depth.a = depthValue;
+			}
 
-			// Near distance
-			depth.r = depthValue;
-			depth.g = 0;
-			depth.b = 0;
 
-			// Far distance
-			depth.a = depthValue;
 			//discard;
 			return depth;
 

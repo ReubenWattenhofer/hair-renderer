@@ -58,10 +58,10 @@
 
 			float4 nearFar = tex2D(_MainDepth, i.scrPos);
 
-			float depthValue = Normalize_Depth(-i.viewPos.z, _ProjectionParams.y, _ProjectionParams.z, 10);
+			float depthValue = Normalize_Depth(-i.viewPos.z, _ProjectionParams.y, _ProjectionParams.z);
 					   
 			// Get relative depth of texel
-			float relativeDepth = (depthValue - nearFar.r) / (nearFar.a - nearFar.r);
+			float relativeDepth = (depthValue - (nearFar.r)) / (nearFar.a - nearFar.r);
 			// Get closest slab
 			int slab = floor(relativeDepth * 4);
 
