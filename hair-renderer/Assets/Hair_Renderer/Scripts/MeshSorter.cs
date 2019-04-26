@@ -639,7 +639,7 @@ private MeshRenderer m_renderer;
 
     public RenderTexture m_ShadowmapCopy;
     public RenderTexture m_DeepOpacityMap;
-
+ 
     public GameObject head;
 
     // From Unity's command buffer example code
@@ -666,7 +666,10 @@ private MeshRenderer m_renderer;
         {
             return;
         }
-        
+
+        //hair_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
+        GetComponent<Renderer>().enabled = false;
+
         // create new command buffer
         deep_opacity_buffer = new CommandBuffer();
         deep_opacity_buffer.name = "deep opacity buffer";
@@ -738,7 +741,6 @@ private MeshRenderer m_renderer;
 
         depthCam.AddCommandBuffer(CameraEvent.AfterDepthTexture, head_depth_buffer);
 
-        
     }
 
 
@@ -746,7 +748,7 @@ private MeshRenderer m_renderer;
     //void OnRenderImage(RenderTexture source, RenderTexture destination)
     //{
     //    //depthCam.rect = new Rect(0, 0, 1, 1);
-    //    Graphics.Blit(m_ShadowmapCopy, destination);
+    //    Graphics.Blit(hair_rt, destination);
     //    //Graphics.Blit(source, destination, mat);
     //    //mat is the material which contains the shader
     //    //we are passing the destination RenderTexture to

@@ -120,7 +120,7 @@ Shader "Custom/basic"
 				sampler2D _MainDepth;
 				sampler2D _MainOccupancy;
 				sampler2D _MainSlab;
-				
+				sampler2D _HeadMainDepth;
 
 				// https://en.wikibooks.org/wiki/Cg_Programming/Unity/Light_Attenuation
 				uniform float4x4 unity_WorldToLight; // transformation 
@@ -374,10 +374,18 @@ Shader "Custom/basic"
 					float4 slabs = tex2D(_MainSlab, i.scrPos);
 					uint4 occupancy = tex2D(_MainOccupancy, i.scrPos);
 
+					float4 headNearFar = tex2D(_HeadMainDepth, i.scrPos);
+
 					float depthValue = Normalize_Depth(-i.viewPos.z, _ProjectionParams.y, _ProjectionParams.z);
+
+					if (depthValue >= headNearFar.r) {
+						discard;
+					}
+					//discard;
 
 					// Get relative depth of texel
 					float relativeDepth = (depthValue - nearFar.r) / (nearFar.a - nearFar.r);
+
 					// Get closest slab
 					int slab = floor(relativeDepth * 4);
 
@@ -463,10 +471,12 @@ Shader "Custom/basic"
 					col.a = colorOut.a;
 					//col.rgb *= (1 - opacity);
 
-				/*	col.r = nearFar.r;
-					col.g = 0;
-					col.b = nearFar.a;
-					col.a = 1;*/
+					//col.r = headNearFar.r;
+					//col.g = 0;
+					//col.b = 0;// headNearFar.a;
+					//col.a = 1;
+
+					//col.rgb = 0.1;
 
 
 					// ambient lighting
