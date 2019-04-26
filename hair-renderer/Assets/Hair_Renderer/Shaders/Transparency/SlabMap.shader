@@ -91,6 +91,7 @@
 				depth.a = 1;// 1;
 			}
 
+			//depth /= 100;
 			//depth = 0;
 			//discard;
 			return depth;

@@ -453,19 +453,19 @@ Shader "Custom/basic"
 					}
 
 					float s = slab;
-					float inside = relativeDepth - s / 4;// ceil(relativeDepth * 4) - (relativeDepth * 4);
+					float inside = 1.0 * (relativeDepth - s / 4);// ceil(relativeDepth * 4) - (relativeDepth * 4);
 					//float inside = ceil(relativeDepth * 4) - (relativeDepth * 4);
-					float previousFragments = allPreviousFragments + (fragmentsInSlab * inside);// +((fragmentsInSlab / setBits) * previousSetBits);
+					float previousFragments = 1 * (allPreviousFragments + (fragmentsInSlab * inside));// +((fragmentsInSlab / setBits) * previousSetBits);
 					//float previousFragments = allPreviousFragments + 0;// ((fragmentsInSlab / setBits) * previousSetBits);
 					//float maxFragments = previousFragments +(fragmentsInSlab / setBits);
 					float maxFragments = previousFragments + (fragmentsInSlab / 1);
 					float interpolation = 0;// ceil(relativeDepth * 64) - (relativeDepth * 64);
 
 					float depthOrder = lerp(previousFragments, maxFragments, interpolation);
-					//depthOrder = 2 * (depthOrder / allFragments);
-					//depthOrder = relativeDepth; //depthValue
+					depthOrder = floor(depthOrder);
+					//depthOrder = relativeDepth/1.5;
+					//depthOrder = pow(2* depthOrder, 2);
 					depthOrder = max(0, depthOrder);
-					//depthOrder = 0;
 
 					float4 colorIn = float4(0, 0, 0, 1);
 					colorIn.rgb = col.rgb * (1 - opacity);

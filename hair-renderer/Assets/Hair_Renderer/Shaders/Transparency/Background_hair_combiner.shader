@@ -64,7 +64,7 @@
 			i.scrPos /= i.scrPos.w;
 
 			//float4 nearFar = tex2D(_MainDepth, i.scrPos);
-			float4 slabs = tex2D(_MainSlab, i.scrPos);
+			float4 slabs = tex2D(_MainSlab, i.scrPos) * 1;
 
 			float4 background = tex2Dproj(_BackgroundTexture, i.grabPos);
 			//float4 background = tex2D(_BackgroundTexture, i.scrPos);
