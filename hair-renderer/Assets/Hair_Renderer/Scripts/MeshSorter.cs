@@ -668,7 +668,7 @@ private MeshRenderer m_renderer;
         }
 
         //hair_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
-        GetComponent<Renderer>().enabled = false;
+        //GetComponent<Renderer>().enabled = false;
 
         // create new command buffer
         deep_opacity_buffer = new CommandBuffer();

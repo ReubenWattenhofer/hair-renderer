@@ -10,11 +10,15 @@ public class TransparencySorting : MonoBehaviour
 
     public GameObject hair;
     public GameObject head;
+
     public Material depth_range_shader;
     public Material head_depth_range_shader;
     public Material occupancy_shader;
     public Material slab_shader;
     public Material hairPass;
+
+    public Material backgroundMaskPass;
+    public Material backgroundHairCombinePass;
 
 
     private CommandBuffer main_depth_buffer;
@@ -26,10 +30,15 @@ public class TransparencySorting : MonoBehaviour
     private RenderTexture occupancy_rt;
     private RenderTexture slab_rt;
 
+    public RenderTexture background_rt;
+
     private void Start()
     {
         //depth_range_rt = new RenderTexture(Screen.width, Screen.height, 0);
         //head_depth_range_rt = new RenderTexture(Screen.width, Screen.height, 0);
+
+        hair_rt.width = 100;// Screen.width;
+        hair_rt.height = 100;// Screen.height;
 
         occupancy_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBInt);
         //occupancy_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.RGBAUShort);
@@ -42,7 +51,7 @@ public class TransparencySorting : MonoBehaviour
     private void Cleanup()
     {
         Camera.main.RemoveCommandBuffer(CameraEvent.BeforeDepthTexture, main_depth_buffer);
-        Camera.main.RemoveCommandBuffer(CameraEvent.AfterEverything, hair_buffer);
+        Camera.main.RemoveCommandBuffer(CameraEvent.AfterDepthTexture, hair_buffer);
     }
 
     private void Update()
@@ -106,13 +115,31 @@ public class TransparencySorting : MonoBehaviour
         //deep_opacity_buffer.SetGlobalTexture("_DepthCulled", new RenderTargetIdentifier(m_ShadowmapCopy));
         hair_buffer.SetGlobalTexture("_Hair", new RenderTargetIdentifier(hair_rt));
 
-        Camera.main.AddCommandBuffer(CameraEvent.AfterEverything, hair_buffer);
+        //int tempID4 = Shader.PropertyToID("_Temp4");
+        //hair_buffer.GetTemporaryRT(tempID4, -1, -1, 0, FilterMode.Bilinear);
+        //hair_buffer.SetRenderTarget(tempID4);
+        //hair_buffer.SetRenderTarget(new RenderTargetIdentifier(background_rt));
+        //hair_buffer.Blit(new RenderTargetIdentifier(Camera.main.targetTexture),
+        //    new RenderTargetIdentifier(background_rt));
+
+        //hair_buffer.SetGlobalTexture("_Background", new RenderTargetIdentifier(background_rt));
+        //hair_buffer.SetGlobalTexture("_Background", new RenderTargetIdentifier(Camera.main.targetTexture));
+        //hair_buffer.SetGlobalTexture("_Background", tempID4);
+        //hair_buffer.SetRenderTarget(new RenderTargetIdentifier(Camera.main.targetTexture));
+        //hair_buffer.SetRenderTarget(new RenderTargetIdentifier(Camera.main.targetDisplay));
+        //hair_buffer.DrawRenderer(hair.GetComponent<Renderer>(), backgroundMaskPass);
+        //hair_buffer.DrawRenderer(hair.GetComponent<Renderer>(), backgroundHairCombinePass);
+
+        //hair_buffer.SetGlobalTexture("_Hair", new RenderTargetIdentifier(Camera.main.targetTexture));
+
+
+        Camera.main.AddCommandBuffer(CameraEvent.AfterDepthTexture, hair_buffer);
     }
 
     //void OnRenderImage(RenderTexture source, RenderTexture destination)
     //{
     //    //depthCam.rect = new Rect(0, 0, 1, 1);
-    //    Graphics.Blit(occupancy_rt, destination);
+    //    Graphics.Blit(Camera.main.targetTexture, destination);
     //}
 
 }

@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Depth_Range
-  m_Shader: {fileID: 4800000, guid: fb59dd3b837573845abfb518e27cd725, type: 3}
+  m_Name: BackgroundMask
+  m_Shader: {fileID: 4800000, guid: 2902560b9acbdff48a6f34aaec41ce02, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0

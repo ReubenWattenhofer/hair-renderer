@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Depth
-  m_Shader: {fileID: 4800000, guid: fb59dd3b837573845abfb518e27cd725, type: 3}
+  m_Name: BackgroundHairCombine
+  m_Shader: {fileID: 4800000, guid: 214a1e339019dd7478b6be171a5f5a66, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0

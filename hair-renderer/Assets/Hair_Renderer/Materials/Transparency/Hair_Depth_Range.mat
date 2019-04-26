@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Depth_Range
-  m_Shader: {fileID: 4800000, guid: fb59dd3b837573845abfb518e27cd725, type: 3}
+  m_Name: Hair_Depth_Range
+  m_Shader: {fileID: 4800000, guid: 68a9666fa96d43c4ca6b0a17dc5964ff, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
