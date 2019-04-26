@@ -7,8 +7,17 @@
 #pragma target 4.0
 
 // https://stackoverflow.com/questions/109023/how-to-count-the-number-of-set-bits-in-a-32-bit-integer
-int numberOfSetBits(uint i)
+int numberOfSetBits(int i)
 {
+	//int count = 0;
+	//i = max(0, i);
+	//while (i)
+	//{
+	//	count += i & 1;
+	//	i >>= 1;
+	//}
+	//return count;
+	
 	return 1;
 	//// Java: use >>> instead of >>
 	//// C or C++: use uint32_t
@@ -18,17 +27,19 @@ int numberOfSetBits(uint i)
 }
 
 // Sets all upper bits of input to 0
-uint mask(uint n, int num_rightmost_bits)
+uint mask(int n, int num_rightmost_bits)
 {
-	uint result = n;
+	int result = n;
 
-	//uint mask = 0;
-	//for (int i = 0; i < num_rightmost_bits; i++)
-	//{
-	//	mask |= 1 << i;
-	//}
+	num_rightmost_bits = min(16, num_rightmost_bits);
 
-	//result &= mask;
+	int mask = 0;
+	for (int i = 0; i < num_rightmost_bits; i++)
+	{
+		mask |= 1 << i;
+	}
+
+	result &= mask;
 
 	return result;
 }

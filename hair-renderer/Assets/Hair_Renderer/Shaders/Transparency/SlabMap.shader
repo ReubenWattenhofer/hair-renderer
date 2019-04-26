@@ -86,7 +86,7 @@
 			{
 				depth.b = 1;
 			}
-			else
+			else if (slab == 3 && nearFar.a - nearFar.r > 0.001)
 			{
 				depth.a = 1;// 1;
 			}
