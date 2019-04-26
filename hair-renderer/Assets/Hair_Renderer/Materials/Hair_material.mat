@@ -80,8 +80,8 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:
-    - _AlphaMultiplier: 0.843
-    - _Ambient: 0.5
+    - _AlphaMultiplier: 0.8
+    - _Ambient: 0.48
     - _BumpScale: 1
     - _Cutoff: 0.5
     - _CutoutThresh: 0.5
@@ -94,7 +94,7 @@ Material:
     - _Mode: 0
     - _OcclusionStrength: 1
     - _OpacityGreyscale: 0
-    - _OpacityOn: 1
+    - _OpacityOn: 0.915
     - _OpacityRGB: 0
     - _Parallax: 0.02
     - _PrimaryShift: 0.275

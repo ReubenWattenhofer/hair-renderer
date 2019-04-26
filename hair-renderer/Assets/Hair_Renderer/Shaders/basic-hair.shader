@@ -15,8 +15,8 @@ Shader "Custom/basic"
 
 		_Test("Texel Test", 2D) = "white" {}
 
-		_CutoutThresh("Alpha Cutoff", Range(0.0,1.0)) = 0.5
-		_AlphaMultiplier("Alpha Multiplier", Range(0.0,0.9)) = 0.8
+		//_CutoutThresh("Alpha Cutoff", Range(0.0,1.0)) = 0.5
+		//_AlphaMultiplier("Alpha Multiplier", Range(0.0,0.9)) = 0.8
 		_TintColor("Tint Color", Color) = (1,1,1,1)
 		_Highlight1("Primary Highlight", Color) = (1,1,1,1)
 		_Highlight2("Secondary Highlight", Color) = (1,1,1,1)

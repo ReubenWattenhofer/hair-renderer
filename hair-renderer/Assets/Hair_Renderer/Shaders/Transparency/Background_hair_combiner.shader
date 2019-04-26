@@ -1,9 +1,12 @@
 ﻿Shader "Custom/Transparency/Background_hair_combiner" {
 	// from "Hair Self Shadowing and Transparency Depth Ordering Using Occupancy maps"
 	SubShader{
-	Tags { "RenderType" = "Opaque" }
+	//Tags { "RenderType" = "Opaque" }
 	//Tags {"Queue" = "Transparent" "RenderType" = "Transparent" }
+	Tags {"RenderType" = "Transparent" }
 	Tags {"Queue" = "Overlay"}
+	//Tags { "ForceNoShadowCasting" = "True"}
+
 	LOD 100
 		ZWRITE On
 		//ZWRITE Off
@@ -63,21 +66,34 @@
 			//float4 nearFar = tex2D(_MainDepth, i.scrPos);
 			float4 slabs = tex2D(_MainSlab, i.scrPos);
 
-			half4 background = tex2Dproj(_BackgroundTexture, i.grabPos);
+			float4 background = tex2Dproj(_BackgroundTexture, i.grabPos);
 			//float4 background = tex2D(_BackgroundTexture, i.scrPos);
 			//float4 background = tex2D(_Background, i.scrPos);
 
 			float4 hair = tex2D(_Hair, i.scrPos);
 
 			float allFragments = slabs.r + slabs.g + slabs.b + slabs.a;
+			//float allFragments = slabs.a;
 
-			float4 col = hair;// background;
+			//allFragments = min(2, allFragments);
+			allFragments = max(0, allFragments);
 
+			float4 col;// = float4(0, 0, 0, 0);
+			if (hair.r == 0) 
+			{
+				col = background;// +(background * pow(1 - 0.8, allFragments));
+			}
+			else
+			{
+			//col = slabs;//slabs// hair + (background * pow(1 - 0.8, allFragments));
+				col = hair + (background * pow(1 - 0.8, allFragments));
+			}
+					   
 			return col;
 
 		}
 		ENDCG
 		}
 	}
-		FallBack "Diffuse"
+		//FallBack "Diffuse"
 }

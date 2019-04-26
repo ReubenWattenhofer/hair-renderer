@@ -7,6 +7,8 @@ using UnityEngine.Rendering;
 [ExecuteInEditMode]
 public class TransparencySorting : MonoBehaviour
 {
+    public float alphaMultiplier = 0.9f;
+    public float cutoutThresh = 0.5f;
 
     public GameObject hair;
     public GameObject head;
@@ -17,8 +19,8 @@ public class TransparencySorting : MonoBehaviour
     public Material slab_shader;
     public Material hairPass;
 
-    public Material backgroundMaskPass;
-    public Material backgroundHairCombinePass;
+    //public Material backgroundMaskPass;
+    //public Material backgroundHairCombinePass;
 
 
     private CommandBuffer main_depth_buffer;
@@ -32,14 +34,18 @@ public class TransparencySorting : MonoBehaviour
 
     public RenderTexture background_rt;
 
+    private void OnEnable()
+    {
+        //hair_rt.width = Screen.width;
+        //hair_rt.height = Screen.height;
+    }
+
     private void Start()
     {
         //depth_range_rt = new RenderTexture(Screen.width, Screen.height, 0);
         //head_depth_range_rt = new RenderTexture(Screen.width, Screen.height, 0);
 
-        hair_rt.width = 100;// Screen.width;
-        hair_rt.height = 100;// Screen.height;
-
+        hair_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
         occupancy_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBInt);
         //occupancy_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.RGBAUShort);
         slab_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
@@ -56,6 +62,15 @@ public class TransparencySorting : MonoBehaviour
 
     private void Update()
     {
+        alphaMultiplier = Mathf.Max(0, alphaMultiplier);
+        alphaMultiplier = Mathf.Min(0.99999f, alphaMultiplier);
+        cutoutThresh = Mathf.Max(0, cutoutThresh);
+        cutoutThresh = Mathf.Min(1f, cutoutThresh);
+
+        Shader.SetGlobalFloat("_AlphaMultiplier", alphaMultiplier);
+        Shader.SetGlobalFloat("_CutoutThresh", cutoutThresh);
+
+
         var act = gameObject.activeInHierarchy && enabled;
         if (!act)
         {
@@ -97,7 +112,9 @@ public class TransparencySorting : MonoBehaviour
         main_depth_buffer.SetGlobalTexture("_MainOccupancy", new RenderTargetIdentifier(occupancy_rt));
 
         main_depth_buffer.SetRenderTarget(new RenderTargetIdentifier(slab_rt));
-        main_depth_buffer.ClearRenderTarget(true, true, Color.black);
+        Color trueBlack = Color.black;
+        trueBlack.a = 0;
+        main_depth_buffer.ClearRenderTarget(true, true, trueBlack);
         main_depth_buffer.DrawRenderer(hair.GetComponent<Renderer>(), slab_shader);
         main_depth_buffer.SetGlobalTexture("_MainSlab", new RenderTargetIdentifier(slab_rt));
 
