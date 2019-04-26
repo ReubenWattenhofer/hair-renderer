@@ -21,17 +21,18 @@ public class TransparencySorting : MonoBehaviour
     [Tooltip("GameObject that directly contains the head mesh renderer")]
     public GameObject head;
 
-    [Header("Shaders")]
+    // Make these public if you want to set/modify them in the editor
+    //[Header("Shaders")]
     [Tooltip("Constructs depth-range map for hair")]
-    public Material depth_range_shader;
+    private Material depth_range_shader;
     [Tooltip("Constructs depth-range map for head")]
-    public Material head_depth_range_shader;
+    private Material head_depth_range_shader;
     [Tooltip("Constructs occupancy map for hair")]
-    public Material occupancy_shader;
+    private Material occupancy_shader;
     [Tooltip("Constructs slab map for hair")]
-    public Material slab_shader;
+    private Material slab_shader;
     [Tooltip("Renders hair to a buffer")]
-    public Material hairPass;
+    private Material hairPass;
 
     //public Material backgroundMaskPass;
     //public Material backgroundHairCombinePass;
@@ -47,20 +48,24 @@ public class TransparencySorting : MonoBehaviour
     private RenderTexture occupancy_rt;
     private RenderTexture slab_rt;
 
-    public RenderTexture background_rt;
-
     private void Start()
     {
+        //Initialize materials (comment this out if you set them through the editor)
+        depth_range_shader = (Material)Resources.Load("Hair_Renderer/Materials/Transparency/Hair_Depth_Range", typeof(Material));
+        head_depth_range_shader = (Material)Resources.Load("Hair_Renderer/Materials/Transparency/Depth_Range", typeof(Material));
+        occupancy_shader = (Material)Resources.Load("Hair_Renderer/Materials/Transparency/Occupancy", typeof(Material));
+        slab_shader = (Material)Resources.Load("Hair_Renderer/Materials/Transparency/Slab", typeof(Material));
+        hairPass = (Material)Resources.Load("Hair_Renderer/Materials/Hair_material", typeof(Material));
+
+        // We need high res channels
         depth_range_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
         head_depth_range_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
 
         hair_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
-        //hair_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGB32);
-        //occupancy_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
-        occupancy_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBInt);
-        //occupancy_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.RGBAUShort);
         slab_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat);
-        //slab_rt = new RenderTexture(Screen.width, Screen.height, 0);
+        // Occupancy needs to be an (ideally unsigned) int channel for easy bit flipping
+        // Not that I got it to work...
+        occupancy_rt = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBInt);
     }
 
     // From Unity's command buffer example code

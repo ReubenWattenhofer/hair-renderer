@@ -6,8 +6,8 @@
 	}
 
 		SubShader{
-		Tags { "RenderType" = "Opaque" }
-		//Tags {"Queue" = "Transparent" "RenderType" = "Transparent" }
+		//Tags { "RenderType" = "Opaque" }
+		Tags {"Queue" = "Transparent" "RenderType" = "Transparent" }
 		LOD 100
 		//ZWRITE On
 			ZWRITE Off
@@ -69,6 +69,7 @@
 
 			float alpha = tex2D(_AlphaTex, i.uv).r * _AlphaMultiplier;
 
+			// Ignore the fragment if it's behind the head or below the alpha cutoff threshold
 			if (depthValue >= headNearFar.r || alpha < _CutoutThresh) {
 				discard;
 			}
@@ -86,13 +87,13 @@
 			{
 				depth.b = 1;
 			}
+			// We need the extra check on the end or dark edges occur around the hair strands (no clue why)
 			else if (slab == 3 && nearFar.a - nearFar.r > 0.001)
 			{
-				depth.a = 1;// 1;
+				depth.a = 1;
 			}
 
 			//depth /= 100;
-			//depth = 0;
 			//discard;
 			return depth;
 
@@ -100,5 +101,5 @@
 		ENDCG
 		}
 	}
-		FallBack "Diffuse"
+		//FallBack "Diffuse"
 }

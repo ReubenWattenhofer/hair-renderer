@@ -1,8 +1,8 @@
 ﻿// http://williamchyr.com/2013/11/unity-shaders-depth-and-normal-textures/
 Shader "Custom/DeepOpacity" {
 	SubShader{
-	Tags { "RenderType" = "Opaque" }
-	//Tags {"Queue" = "Transparent" "RenderType" = "Transparent" }
+	//Tags { "RenderType" = "Opaque" }
+	Tags {"Queue" = "Transparent" "RenderType" = "Transparent" }
 	LOD 100
 	ZWRITE Off
 	Cull Off
@@ -78,5 +78,5 @@ Shader "Custom/DeepOpacity" {
 	ENDCG
 	}
 	}
-		FallBack "Diffuse"
+		//FallBack "Diffuse"
 }

@@ -38,12 +38,13 @@ public class DeepOpacity : MonoBehaviour
     [Tooltip("GameObject that directly contains the head mesh renderer")]
     public GameObject head;
 
-    [Header("Shaders")]
+    // Make these public if you want to set/modify them in the editor
+    //[Header("Shaders")]
     [Tooltip("Constructs a depth map of the hair")]
-    public Material depthPass;
+    private Material depthPass;
     //public Material depthPassNoCull;
     [Tooltip("Constructs the deep opacity layers of the hair")]
-    public Material opacityPass;
+    private Material opacityPass;
 
     private CommandBuffer deep_opacity_buffer, head_depth_buffer;
 
@@ -66,18 +67,20 @@ public class DeepOpacity : MonoBehaviour
         rt = depthCam.targetTexture;
     }
 
+    // Start is called before the first frame update
+    void Start()
+    {
+        depthPass = (Material)Resources.Load("Hair_Renderer/Materials/Transparency/Depth_Range", typeof(Material));
+        opacityPass = (Material)Resources.Load("Hair_Renderer/Materials/Deep_Opacity", typeof(Material));
+    }
+
+
     // From Unity's command buffer example code
     // Remove command buffers from the main camera -- see Unity example code for more thorough cleanup
     private void Cleanup()
     {
         depthCam.RemoveCommandBuffer(CameraEvent.BeforeDepthTexture, deep_opacity_buffer);
         depthCam.RemoveCommandBuffer(CameraEvent.AfterDepthTexture, head_depth_buffer);
-    }
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        
     }
 
     // Code adapted from Unity command buffer example code and
