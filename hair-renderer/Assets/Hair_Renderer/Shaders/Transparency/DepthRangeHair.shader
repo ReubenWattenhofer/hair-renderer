@@ -5,8 +5,8 @@
 	}
 	
 	SubShader{
-	//Tags { "RenderType" = "Opaque" }
-	Tags {"Queue" = "Transparent" "RenderType" = "Transparent" }
+	Tags { "RenderType" = "Opaque" }
+	//Tags {"Queue" = "Transparent" "RenderType" = "Transparent" }
 	LOD 100
 		//ZWRITE On
 			ZWRITE Off
