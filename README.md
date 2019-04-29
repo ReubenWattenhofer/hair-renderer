@@ -23,3 +23,7 @@ Apply the "Hair_material" (under Resources/Hair_Renderer/Materials) to the hair 
   * MeshMerge.cs script, found under Hair_Renderer/Scripts
 
 MeshMerge.cs will merge the meshes into a single mesh owned by the parent.  This parent must not have any children other than the hair meshes.
+
+For the self-shadowing and transparency to work, additional work must be done.  For self-shadowing, create a camera and make sure its projection is set to orthographic.  Assign a directional light as a child to it, and make sure both the light and camera are pointing the same way (ie light transform is the identity matrix).  Lastly, add the DeepOpacity.cs script to the camera, and customize the public variables as you see fit.  The camera, and by extension the light, can be easily set up by pressing ctrl+shift+f.
+
+For transparency, attach the TransparencySorting.cs script to the main camera, and set the public variables.
