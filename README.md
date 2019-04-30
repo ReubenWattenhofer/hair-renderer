@@ -17,13 +17,13 @@ In addition to the hair model, you will need textures, hopefully provided with t
 
 Download the "hair-renderer" Unity package, which includes the shader, C# scripts, and textures.  Open your current Unity project and select Assets/Import Package/Custom Package.  Select the hair-renderer package and import all.
 
-Apply the "Hair_material" (under Resources/Hair_Renderer/Materials) to the hair mesh.  If the hair model is composed of individiual meshes for each ribbon patch, create a parent object and add the meshes to it (though this will most likely already be done).  Make sure the parent object has the following components:
-  * A mesh renderer, with the "Hair_material" material assigned to it.
+Apply the "BackgroundHairCombine" material (under Resources/Hair_Renderer/Materials/Transparency) to the hair mesh.  If the hair model is composed of individiual meshes for each ribbon patch, create a parent object and add the meshes to it (though this will most likely already be done).  Make sure the parent object has the following components:
+  * A mesh renderer, with the "BackgroundHairCombine" material assigned to it.
   * A mesh filter
   * MeshMerge.cs script, found under Hair_Renderer/Scripts
 
 MeshMerge.cs will merge the meshes into a single mesh owned by the parent.  This parent must not have any children other than the hair meshes.
 
-For the self-shadowing and transparency to work, additional work must be done.  For self-shadowing, create a camera and make sure its projection is set to orthographic.  Assign a directional light as a child to it, and make sure both the light and camera are pointing the same way (ie light transform is the identity matrix).  Lastly, add the DeepOpacity.cs script to the camera, and customize the public variables as you see fit.  The camera, and by extension the light, can be easily set up by pressing ctrl+shift+f.
+For the self-shadowing and transparency to work, additional work must be done.  For self-shadowing, create a camera and make sure its projection is set to orthographic.  Set the camera size to 20, and make sure the camera preview does not clip the hair.  Assign a directional light as a child of the camera, and make sure both the light and camera are pointing the same way (ie light transform is the identity matrix).  Lastly, add the DeepOpacity.cs script to the camera, and customize the public variables as you see fit.  The camera, and by extension the light, can be easily set up by pressing ctrl+shift+f.
 
 For transparency, attach the TransparencySorting.cs script to the main camera, and set the public variables.
